@@ -2,6 +2,7 @@
 <html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231a4025'/><text y='72' x='50' text-anchor='middle' font-size='60' font-family='monospace' font-weight='bold' fill='%234ade80'>S</text></svg>">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>SPYTRAP — Diatraea saccharalis</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1095,8 +1096,19 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
 const API = {
 
   // ── CONFIG ──────────────────────────────────────────────────
-  // Altere para o endereço real do seu backend no Render:
-  BASE_URL: window.location.origin,
+  // URL da API:
+  //   - Quando servido pelo Render (backend + frontend juntos): usa window.location.origin
+  //   - Quando frontend no GitHub Pages ou outra hospedagem separada:
+  //     altere RENDER_API_URL abaixo com o endereço do seu backend no Render
+  BASE_URL: (() => {
+    const RENDER_API_URL = 'https://spytrap-api.onrender.com'; // ← altere para a URL real do Render
+    const isGithubPages = window.location.hostname.includes('github.io');
+    const isLocalFile   = window.location.protocol === 'file:';
+    const isLocalhost   = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    // GitHub Pages ou arquivo local → usa o Render; localhost → usa própria origem
+    if (isGithubPages || isLocalFile) return RENDER_API_URL;
+    return window.location.origin;
+  })(),
 
   getHeaders() {
     const token = localStorage.getItem('agrosentinel_token')
@@ -1912,18 +1924,30 @@ async function verificarAuth() {
   const token = localStorage.getItem('agrosentinel_token')
              || sessionStorage.getItem('agrosentinel_token');
 
+  // Sem token: em GitHub Pages / modo demo permite acesso direto ao dashboard.
+  // Quando o backend estiver em produção e o login implementado, esta parte
+  // redirecionará para o login normalmente (res.status === 401 abaixo).
   if (!token) {
-    window.location.href = 'login.html';
-    return false;
+    // Tenta confirmar que o backend está disponível antes de redirecionar
+    try {
+      const probe = await fetch(`${API.BASE_URL}/ping`, { signal: AbortSignal.timeout(4000) });
+      if (probe.ok) {
+        // Backend acessível e sem token → vai para login
+        window.location.href = 'login.html';
+        return false;
+      }
+    } catch { /* backend indisponível — continua em modo demo */ }
+    return true;
   }
 
   try {
     const res = await fetch(`${API.BASE_URL}/api/auth/me`, {
       headers: { 'Authorization': `Bearer ${token}` },
+      signal: AbortSignal.timeout(6000),
     });
 
     if (res.status === 401) {
-      // Token expirado ou inválido — limpa e vai para login
+      // Token expirado ou inválido — limpa e redireciona para login
       localStorage.removeItem('agrosentinel_token');
       localStorage.removeItem('agrosentinel_user');
       sessionStorage.removeItem('agrosentinel_token');
@@ -1944,12 +1968,15 @@ async function verificarAuth() {
           `<div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);display:flex;align-items:center;">${user.nome.split(' ')[0]}${perfilBadge}</div>`
         );
       }
+      return true;
     }
-    // Se a API estiver fora do ar (ex: Render dormindo), permite acesso
+
+    // 404 ou outro status inesperado (ex: GitHub Pages retornando HTML)
+    // → silenciosamente permite acesso — não gera erro no console
     return true;
 
   } catch {
-    // Sem conexão com a API — permite acesso com dados mock
+    // Timeout ou sem conexão → permite acesso em modo demo
     return true;
   }
 }
