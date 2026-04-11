@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>AgroSentinel — Spodoptera frugiperda</title>
+<title>SPYTRAP — Diatraea saccharalis</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ════════════════════════════════════════
@@ -803,7 +803,73 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
   .tstat-val { font-size:16px; }
   .tstat-lbl { font-size:7px; }
 }
+
+/* ── LEAFLET MAP ── */
+.map-panel-tabs {
+  display:flex; gap:4px; margin-bottom:12px; flex-shrink:0;
+}
+.mpt {
+  flex:1; padding:6px 4px; text-align:center;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); color:var(--text-muted);
+  font-family:var(--font-mono); font-size:9px; letter-spacing:1px;
+  cursor:pointer; transition:all .15s; font-weight:500;
+}
+.mpt.active {
+  background:var(--green-dim); border-color:rgba(74,222,128,.4); color:var(--green);
+}
+.map-container {
+  display:none; flex:1; min-height:260px;
+  border-radius:var(--radius-sm); overflow:hidden;
+  border:1px solid var(--border); position:relative;
+}
+.map-container.visible { display:block; }
+
+/* Leaflet popup → design system */
+.leaflet-popup-content-wrapper {
+  background:var(--surface) !important;
+  color:var(--text) !important;
+  border:1px solid var(--border) !important;
+  border-radius:var(--radius-md) !important;
+  box-shadow:0 4px 20px rgba(0,0,0,.25) !important;
+  font-family:var(--font-ui) !important;
+  font-size:12px !important;
+  padding:0 !important;
+}
+.leaflet-popup-content {
+  margin:0 !important; padding:10px 14px !important;
+  line-height:1.6 !important;
+}
+.leaflet-popup-tip { background:var(--surface) !important; }
+.leaflet-popup-close-button {
+  color:var(--text-muted) !important;
+  font-size:16px !important; top:4px !important; right:6px !important;
+}
+.leaflet-control-zoom a {
+  background:var(--surface) !important; color:var(--text) !important;
+  border-color:var(--border) !important;
+  font-family:var(--font-mono) !important;
+}
+.leaflet-control-zoom a:hover { background:var(--surface2) !important; color:var(--green) !important; }
+.leaflet-control-layers {
+  background:var(--surface) !important; border-color:var(--border) !important;
+  color:var(--text-muted) !important; font-family:var(--font-mono) !important; font-size:10px !important;
+}
+.leaflet-control-layers-selector { accent-color:var(--green); }
+/* Dark mode: suaviza o satélite */
+[data-theme="dark"] .leaflet-tile-pane { filter:brightness(.82) saturate(.85); }
+[data-theme="dark"] .leaflet-container { background:var(--surface2); }
+/* Coords clickable */
+.coords-link {
+  cursor:pointer; display:inline-flex; align-items:center; gap:5px;
+  transition:opacity .15s;
+}
+.coords-link:hover { opacity:.75; }
+.coords-pin { flex-shrink:0; }
 </style>
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
@@ -848,7 +914,7 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
     <div class="vdiv"></div>
     <div class="trap-field">
       <div class="label">Localização</div>
-      <div class="trap-field-val coords" id="trapCoords">—</div>
+      <div class="trap-field-val coords coords-link" id="trapCoords" onclick="showMapView()" title="Ver no mapa"><svg class="coords-pin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg><span id="trapCoordsText">—</span></div>
     </div>
     <div class="vdiv"></div>
     <div class="trap-field">
@@ -858,7 +924,7 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
     <div class="vdiv"></div>
     <div class="trap-field">
       <div class="label">Praga alvo</div>
-      <div class="trap-field-val species">Spodoptera frugiperda</div>
+      <div class="trap-field-val species">Diatraea saccharalis</div>
     </div>
     <div class="vdiv"></div>
     <div class="trap-field">
@@ -878,10 +944,19 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
 ══════════════════════════════════════ -->
 <div class="main">
 
-  <!-- COL 1: CALENDAR -->
+  <!-- COL 1: CALENDAR + MAPA -->
   <div class="panel" id="panelCalendar" data-panel="calendar">
-    <div class="ph">
-      <div class="pt">Navegação</div>
+
+    <!-- Aba CALENDÁRIO / MAPA -->
+    <div class="map-panel-tabs">
+      <div class="mpt active" id="mptCal" onclick="showCalView()">CALENDÁRIO</div>
+      <div class="mpt"        id="mptMap" onclick="showMapView()">MAPA</div>
+    </div>
+
+    <!-- ── Conteúdo do Calendário ── -->
+    <div id="calContent">
+    <div class="ph" style="margin-bottom:8px">
+      <div class="pt" style="font-size:11px;color:var(--text-muted)">Modo de visualização</div>
       <span class="badge bb" id="viewModeBadge">DIA ÚNICO</span>
     </div>
     <div class="mode-tabs">
@@ -918,6 +993,13 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
       <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--amber)"></div>Média</div>
       <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--green)"></div>Baixa</div>
     </div>
+    </div><!-- /calContent -->
+
+    <!-- ── Conteúdo do Mapa ── -->
+    <div id="mapContent" class="map-container">
+      <div id="trapMap" style="width:100%;height:100%;min-height:260px;"></div>
+    </div>
+
   </div>
 
   <!-- COL 2: CAPTURE LIST -->
@@ -943,7 +1025,7 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
     <div class="image-frame" id="imgFrame" onclick="openModal()">
       <div class="img-badges" id="imgBadges" style="display:none">
         <span class="ib count"   id="ibCount">—</span>
-        <span class="ib species">Spodoptera frugiperda</span>
+        <span class="ib species">Diatraea saccharalis</span>
         <span class="ib conf"    id="ibConf">—</span>
       </div>
       <div id="imgDots"></div>
@@ -1002,7 +1084,7 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
       <div class="modal-img-txt">[ Imagem real da armadilha ]<br><br>Integrar URL da API aqui</div>
     </div>
     <div class="modal-meta">
-      <div class="mmc"><div class="mmc-lbl">Espécie</div><div class="mmc-val" style="font-style:italic;font-size:10px">Spodoptera frugiperda</div></div>
+      <div class="mmc"><div class="mmc-lbl">Espécie</div><div class="mmc-val" style="font-style:italic;font-size:10px">Diatraea saccharalis</div></div>
       <div class="mmc"><div class="mmc-lbl">Detectados</div><div class="mmc-val" id="modalCount" style="color:var(--red)">—</div></div>
       <div class="mmc"><div class="mmc-lbl">Confiança IA</div><div class="mmc-val" id="modalConf" style="color:var(--blue)">—</div></div>
     </div>
@@ -1041,7 +1123,7 @@ const API = {
 
   // ── CONFIG ──────────────────────────────────────────────────
   // Altere para o endereço real do seu backend no Render:
-  BASE_URL: 'https://spytrap-api.onrender.com',
+  BASE_URL: window.location.origin,
 
   getHeaders() {
     const token = localStorage.getItem('agrosentinel_token')
@@ -1063,9 +1145,11 @@ const API = {
     // ── MOCK ── remova este bloco e descomente o fetch abaixo
     return {
       id: 'A-01',
-      name: 'Armadilha A-01',
+      name: 'SPYTRAP',
       lat: "19°27'12\"S",
       lng: "47°58'44\"W",
+      latDec: -19.4533,   // decimal para o mapa — virá da API real
+      lngDec: -47.9789,   // decimal para o mapa — virá da API real
       status: 'online',
       lastCapture: 'Hoje às 19:05',
       monthTotal: 63,
@@ -1324,8 +1408,12 @@ window.addEventListener('resize', syncMobilePanels);
 async function loadTrapInfo() {
   try {
     const info = await API.getTrapInfo();
-    document.getElementById('trapName').textContent     = info.name;
-    document.getElementById('trapCoords').textContent   = `${info.lat}, ${info.lng}`;
+    document.getElementById('trapName').textContent       = info.name;
+    document.getElementById('trapCoordsText').textContent = `${info.lat}, ${info.lng}`;
+    // Inicializa mapa com coordenadas decimais da API
+    if (info.latDec !== undefined && info.lngDec !== undefined) {
+      initTrapMap(info.latDec, info.lngDec, info.name, info.lat, info.lng);
+    }
     document.getElementById('trapLastCap').textContent  = info.lastCapture;
     document.getElementById('sTotalMonth').textContent  = info.monthTotal;
     document.getElementById('sPeakDay').textContent     = info.peakDay;
@@ -1587,7 +1675,7 @@ async function loadDayCaptures(key) {
     document.getElementById('capturesBadge').textContent = caps.length ? `${caps.length} captura${caps.length>1?'s':''}` : 'Sem dados';
     document.getElementById('capturesBadge').className   = 'badge ' + (caps.length>=5?'br':caps.length>=3?'ba':'bg');
     document.getElementById('dayHeaderSub').textContent  = caps.length
-      ? `${total} Spodoptera detectadas · ${caps.length} capturas`
+      ? `${total} Diatraea detectadas · ${caps.length} capturas`
       : 'Nenhuma captura registrada neste dia';
 
     container.innerHTML = '';
@@ -1823,6 +1911,121 @@ async function verificarAuth() {
     // Sem conexão com a API — permite acesso com dados mock
     return true;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAPA — Leaflet.js
+═══════════════════════════════════════════════════════════════ */
+let _trapMap    = null;
+let _trapMarker = null;
+
+function initTrapMap(lat, lng, name, latStr, lngStr) {
+  if (_trapMap) return; // já inicializado
+
+  _trapMap = L.map('trapMap', {
+    zoomControl: true,
+    attributionControl: false,
+  });
+
+  // ── Camadas de tiles ──────────────────────────────────────
+  const satellite = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 19, attribution: 'ESRI World Imagery' }
+  );
+  const streets = L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { maxZoom: 19, attribution: '© OpenStreetMap' }
+  );
+  satellite.addTo(_trapMap);
+
+  // ── Controle de camadas ──────────────────────────────────
+  L.control.layers(
+    { 'Satélite': satellite, 'Mapa': streets },
+    {},
+    { position: 'topright', collapsed: true }
+  ).addTo(_trapMap);
+
+  // ── Marcador personalizado ───────────────────────────────
+  const markerHtml = `
+    <div style="
+      position:relative; width:36px; height:44px;
+      display:flex; flex-direction:column; align-items:center;
+    ">
+      <div style="
+        width:36px; height:36px; border-radius:50% 50% 50% 0;
+        transform:rotate(-45deg);
+        background:var(--green); border:3px solid #fff;
+        box-shadow:0 3px 10px rgba(0,0,0,.45);
+        display:flex; align-items:center; justify-content:center;
+      ">
+        <div style="
+          transform:rotate(45deg);
+          font-family:'JetBrains Mono',monospace;
+          font-size:7px; font-weight:700;
+          color:#0a0f0a; letter-spacing:-.5px; line-height:1;
+          text-align:center;
+        ">SPY<br>TRAP</div>
+      </div>
+      <div style="
+        width:2px; height:8px;
+        background:rgba(0,0,0,.3); border-radius:1px;
+      "></div>
+    </div>`;
+
+  const icon = L.divIcon({
+    className: '',
+    html: markerHtml,
+    iconSize:   [36, 44],
+    iconAnchor: [18, 44],
+    popupAnchor:[0, -46],
+  });
+
+  const popupContent = `
+    <div style="padding:2px 0">
+      <div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--green)">${name}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted)">${latStr}, ${lngStr}</div>
+      <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
+        <span style="
+          font-family:'JetBrains Mono',monospace;font-size:9px;
+          background:var(--green-dim);border:1px solid rgba(74,222,128,.3);
+          border-radius:4px;padding:2px 7px;color:var(--green);
+        ">● Online</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim)">Diatraea saccharalis</span>
+      </div>
+    </div>`;
+
+  _trapMarker = L.marker([lat, lng], { icon })
+    .addTo(_trapMap)
+    .bindPopup(popupContent, { maxWidth: 240 });
+
+  // Círculo de área de cobertura (raio aproximado ~200m)
+  L.circle([lat, lng], {
+    radius: 200,
+    color: 'rgba(74,222,128,.6)',
+    fillColor: 'rgba(74,222,128,.08)',
+    fillOpacity: 1,
+    weight: 1.5,
+  }).addTo(_trapMap);
+
+  _trapMap.setView([lat, lng], 16);
+}
+
+function showMapView() {
+  document.getElementById('calContent').style.display   = 'none';
+  document.getElementById('mapContent').classList.add('visible');
+  document.getElementById('mptCal').classList.remove('active');
+  document.getElementById('mptMap').classList.add('active');
+  // Leaflet precisa recalcular tamanho após display change
+  if (_trapMap) setTimeout(() => _trapMap.invalidateSize(), 120);
+  // Sync mobile tab para calendário (que contém o mapa)
+  if (window.innerWidth <= 700) mobileTab('calendar');
+}
+
+function showCalView() {
+  document.getElementById('mapContent').classList.remove('visible');
+  document.getElementById('calContent').style.display   = '';
+  document.getElementById('mptMap').classList.remove('active');
+  document.getElementById('mptCal').classList.add('active');
 }
 
 (async function init() {
