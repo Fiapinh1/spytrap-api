@@ -1,0 +1,1842 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>AgroSentinel — Spodoptera frugiperda</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════
+   DESIGN TOKENS
+════════════════════════════════════════ */
+:root,
+[data-theme="dark"] {
+  --bg:          #0a0f0a;
+  --surface:     #111a11;
+  --surface2:    #162016;
+  --surface3:    #0e160e;
+  --border:      #1e2e1e;
+  --border-soft: #253525;
+  --green:       #4ade80;
+  --green-dim:   #1a4025;
+  --green-glow:  rgba(74,222,128,0.12);
+  --amber:       #f59e0b;
+  --amber-dim:   #3a2a05;
+  --red:         #f87171;
+  --red-dim:     #3a1010;
+  --blue:        #60a5fa;
+  --blue-dim:    rgba(96,165,250,.1);
+  --text:        #e2eed4;
+  --text-muted:  #6b7e5a;
+  --text-dim:    #3d4f32;
+  --text-invert: #0a0f0a;
+  --grid-color:  rgba(74,222,128,0.025);
+  --shadow:      0 4px 20px rgba(0,0,0,0.4);
+  --shadow-sm:   0 2px 8px rgba(0,0,0,0.3);
+  --font-mono:   'JetBrains Mono', monospace;
+  --font-ui:     'Outfit', sans-serif;
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --header-h:    58px;
+  --bottom-nav-h:70px;
+}
+
+[data-theme="light"] {
+  --bg:          #f0f4f0;
+  --surface:     #ffffff;
+  --surface2:    #f4f7f4;
+  --surface3:    #edf2ed;
+  --border:      #d4e0d4;
+  --border-soft: #e2ede2;
+  --green:       #16a34a;
+  --green-dim:   #dcfce7;
+  --green-glow:  rgba(22,163,74,0.1);
+  --amber:       #d97706;
+  --amber-dim:   #fef3c7;
+  --red:         #dc2626;
+  --red-dim:     #fee2e2;
+  --blue:        #2563eb;
+  --blue-dim:    rgba(37,99,235,.08);
+  --text:        #1a2e1a;
+  --text-muted:  #4a6b4a;
+  --text-dim:    #8aab8a;
+  --text-invert: #ffffff;
+  --grid-color:  rgba(22,163,74,0.04);
+  --shadow:      0 4px 20px rgba(0,0,0,0.08);
+  --shadow-sm:   0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ════════════════════════════════════════
+   RESET & BASE
+════════════════════════════════════════ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+body {
+  transition: background .25s, color .25s;
+}
+
+body::before {
+  content:'';
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size:32px 32px;
+}
+
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+/* ════════════════════════════════════════
+   TYPOGRAPHY HELPERS
+════════════════════════════════════════ */
+.mono { font-family: var(--font-mono); }
+.label {
+  font-family:var(--font-mono); font-size:9px;
+  letter-spacing:1.5px; text-transform:uppercase; color:var(--text-muted);
+}
+
+/* ════════════════════════════════════════
+   BADGE
+════════════════════════════════════════ */
+.badge {
+  font-family:var(--font-mono); font-size:9px;
+  padding:3px 8px; border-radius:var(--radius-sm); border:1px solid;
+  white-space:nowrap;
+}
+.bg { color:var(--green); border-color:rgba(74,222,128,.3); background:var(--green-dim); }
+.ba { color:var(--amber); border-color:rgba(245,158,11,.3);  background:var(--amber-dim); }
+.br { color:var(--red);   border-color:rgba(248,113,113,.3); background:var(--red-dim); }
+.bb { color:var(--blue);  border-color:rgba(96,165,250,.3);  background:var(--blue-dim); }
+
+/* ════════════════════════════════════════
+   HEADER
+════════════════════════════════════════ */
+.header {
+  position:sticky; top:0; z-index:60;
+  height:var(--header-h);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px;
+  background:rgba(10,15,10,.96);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(14px);
+}
+
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon {
+  width:32px; height:32px; flex-shrink:0;
+  background:var(--green-dim); border:1px solid rgba(74,222,128,.5);
+  border-radius:var(--radius-sm);
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px; line-height:1;
+  color:var(--green);
+}
+.logo-name { font-size:16px; font-weight:800; letter-spacing:-.5px; }
+.logo-name span { color:var(--green); }
+.logo-sub {
+  font-family:var(--font-mono); font-size:8px;
+  color:var(--text-muted); letter-spacing:1px; margin-top:1px;
+}
+
+.header-right { display:flex; align-items:center; gap:10px; }
+/* ── THEME TOGGLE ── */
+.theme-btn {
+  display:flex; align-items:center; gap:7px;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:20px; padding:5px 10px 5px 7px;
+  cursor:pointer; transition:all .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.theme-btn:hover { border-color:var(--green); }
+.theme-track {
+  width:32px; height:18px; border-radius:9px;
+  background:var(--green-dim); position:relative; flex-shrink:0;
+}
+.theme-thumb {
+  width:12px; height:12px; border-radius:50%;
+  background:var(--green); position:absolute; top:3px; left:3px;
+  transition:transform .25s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 1px 4px rgba(0,0,0,.3);
+}
+[data-theme="light"] .theme-thumb { transform:translateX(14px); }
+.theme-lbl {
+  font-family:'JetBrains Mono', monospace; font-size:9px;
+  color:var(--text-muted); letter-spacing:.5px; white-space:nowrap;
+}
+
+/* global transition */
+body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
+.capture-item, .img-thumb, .imc, .tstat, .day-header,
+.rsd-group, .cal-day, .mode-tab, .range-input, .nav-btn,
+.badge, .cap-thumb, .image-frame, .btn-logout, .theme-btn {
+  transition: background .25s, border-color .25s, color .25s;
+}
+
+
+
+.live-badge {
+  display:flex; align-items:center; gap:5px;
+  font-family:var(--font-mono); font-size:10px;
+  color:var(--green); background:var(--green-dim);
+  border:1px solid rgba(74,222,128,.3);
+  padding:5px 9px; border-radius:20px;
+}
+.live-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--green); animation:pulse 2s infinite;
+}
+
+.clock-badge {
+  font-family:var(--font-mono); font-size:11px; color:var(--text-muted);
+}
+
+/* Logout button */
+.btn-logout {
+  display:flex; align-items:center; gap:6px;
+  background:var(--red-dim); border:1px solid rgba(248,113,113,.3);
+  color:var(--red); border-radius:var(--radius-sm);
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.5px;
+  padding:6px 12px; cursor:pointer;
+  transition:all .2s;
+}
+.btn-logout:hover {
+  background:rgba(248,113,113,.18);
+  border-color:rgba(248,113,113,.6);
+}
+[data-theme="light"] .btn-logout {
+  background:var(--red-dim); border-color:rgba(220,38,38,.3); color:var(--red);
+}
+.btn-logout-icon { font-size:13px; display:flex; align-items:center; }
+.btn-logout-text { display:inline; }
+
+/* ════════════════════════════════════════
+   TRAP BAR
+════════════════════════════════════════ */
+.trap-bar {
+  position:relative; z-index:1;
+  margin:16px 20px 0;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:14px 18px;
+  display:flex; align-items:center;
+  justify-content:space-between; gap:16px;
+  flex-wrap:wrap;
+  animation:fadeUp .35s ease both;
+}
+
+.trap-bar-left { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+
+.trap-online-dot {
+  width:10px; height:10px; border-radius:50%; flex-shrink:0;
+  background:var(--green); box-shadow:0 0 8px var(--green);
+  animation:pulse 2s infinite;
+}
+.trap-name { font-size:17px; font-weight:800; }
+
+.vdiv { width:1px; height:26px; background:var(--border); flex-shrink:0; }
+
+.trap-field { display:flex; flex-direction:column; gap:2px; }
+.trap-field-val { font-family:var(--font-mono); font-size:11px; }
+.trap-field-val.coords { color:var(--green); }
+.trap-field-val.online { color:var(--green); }
+.status-pill { display:inline-flex; align-items:center; gap:5px; }
+.status-pill::before { content:""; width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.status-pill.online::before { background:var(--green); box-shadow:0 0 6px var(--green); }
+.status-pill.offline::before { background:var(--red); box-shadow:0 0 6px var(--red); }
+
+.trap-field-val.species { font-style:italic; font-size:10px; }
+
+.trap-stats { display:flex; gap:8px; flex-wrap:wrap; }
+
+.tstat {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:8px 14px;
+  text-align:center; min-width:76px;
+  position:relative; overflow:hidden;
+}
+.tstat::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+.tstat.g::after { background:var(--green); }
+.tstat.a::after { background:var(--amber); }
+.tstat.r::after { background:var(--red); }
+.tstat-val { font-size:21px; font-weight:800; line-height:1; }
+.tstat.g .tstat-val { color:var(--green); }
+.tstat.a .tstat-val { color:var(--amber); }
+.tstat.r .tstat-val { color:var(--red); }
+.tstat-lbl {
+  font-family:var(--font-mono); font-size:8px;
+  letter-spacing:1px; text-transform:uppercase;
+  color:var(--text-muted); margin-top:3px;
+}
+
+/* ════════════════════════════════════════
+   MAIN GRID — DESKTOP 3 COL
+════════════════════════════════════════ */
+.main {
+  position:relative; z-index:1;
+  display:grid;
+  grid-template-columns: 292px 1fr 1.5fr;
+  gap:14px;
+  padding:14px 20px 24px;
+}
+
+/* ════════════════════════════════════════
+   PANEL BASE
+════════════════════════════════════════ */
+.panel {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:16px;
+  display:flex; flex-direction:column;
+  animation:fadeUp .4s ease .1s both;
+}
+
+.ph { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-shrink:0; }
+.pt { font-size:13px; font-weight:700; }
+
+/* ════════════════════════════════════════
+   CALENDAR
+════════════════════════════════════════ */
+.mode-tabs { display:flex; gap:4px; margin-bottom:10px; }
+.mode-tab {
+  flex:1; padding:6px 4px; text-align:center;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); color:var(--text-muted);
+  font-family:var(--font-mono); font-size:9px; letter-spacing:1px;
+  cursor:pointer; transition:all .15s;
+}
+.mode-tab.active {
+  background:var(--green-dim); border-color:rgba(74,222,128,.4); color:var(--green);
+}
+
+.cal-nav {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;
+}
+.cal-month-label { font-size:12px; font-weight:700; }
+.cal-btn {
+  background:var(--surface2); border:1px solid var(--border);
+  color:var(--text-muted); border-radius:var(--radius-sm);
+  width:28px; height:28px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; transition:all .15s; color:var(--text-muted);
+}
+.cal-btn:hover { border-color:var(--green); color:var(--green); }
+
+.cal-weekdays {
+  display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:3px;
+}
+.cal-wd {
+  font-family:var(--font-mono); font-size:8px;
+  letter-spacing:1px; color:var(--text-dim); text-align:center; padding:3px 0;
+}
+
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+
+.cal-day {
+  aspect-ratio:1; border-radius:var(--radius-sm);
+  border:1px solid transparent;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  cursor:pointer; position:relative;
+  transition:all .15s; gap:2px;
+  -webkit-tap-highlight-color:transparent;
+}
+.cal-day:hover:not(.empty):not(.future) { border-color:var(--green); background:rgba(74,222,128,.06); }
+.cal-day.empty, .cal-day.future { cursor:default; }
+.cal-day.future { opacity:.25; }
+.cal-day.today  { border-color:rgba(74,222,128,.4); background:rgba(74,222,128,.05); }
+.cal-day.selected { border-color:var(--green); background:rgba(74,222,128,.12); color:var(--green); font-weight:700; }
+.cal-day.in-range { background:rgba(74,222,128,.04); border-color:rgba(74,222,128,.14); }
+.cal-day.range-start, .cal-day.range-end { border-color:var(--green); background:rgba(74,222,128,.14); color:var(--green); font-weight:700; }
+.cal-day.has-data:not(.selected):not(.range-start):not(.range-end) { background:rgba(74,222,128,.02); }
+
+.cal-day-num { font-size:10px; line-height:1; }
+.cal-dots { display:flex; gap:2px; align-items:center; height:5px; }
+.cal-dot { width:4px; height:4px; border-radius:50%; }
+.cal-dot.high { background:var(--red); }
+.cal-dot.med  { background:var(--amber); }
+.cal-dot.low  { background:var(--green); }
+
+.range-controls { margin-top:12px; padding-top:12px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:7px; }
+.range-row { display:flex; align-items:center; gap:8px; }
+.range-lbl { font-family:var(--font-mono); font-size:9px; color:var(--text-muted); width:28px; flex-shrink:0; }
+.range-input {
+  flex:1; background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:6px 8px;
+  font-family:var(--font-mono); font-size:10px; color:var(--text);
+  outline:none; transition:border-color .15s;
+  color-scheme:dark; color-scheme:var(--color-scheme, dark);
+}
+.range-input:focus { border-color:var(--green); }
+.btn-apply {
+  width:100%; padding:8px; background:var(--green-dim);
+  border:1px solid rgba(74,222,128,.4); border-radius:var(--radius-sm);
+  color:var(--green); font-family:var(--font-mono); font-size:10px;
+  letter-spacing:1px; cursor:pointer; transition:all .15s;
+}
+.btn-apply:hover { background:rgba(74,222,128,.15); }
+.btn-clear {
+  background:none; border:none; color:var(--text-muted);
+  font-family:var(--font-mono); font-size:9px;
+  cursor:pointer; text-align:center; padding:3px;
+  transition:color .15s;
+}
+.btn-clear:hover { color:var(--text); }
+
+.cal-legend { display:flex; gap:12px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); flex-shrink:0; }
+.cal-legend-item { display:flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:8px; color:var(--text-muted); }
+.cal-legend-dot { width:7px; height:7px; border-radius:50%; }
+
+/* ════════════════════════════════════════
+   CAPTURE LIST
+════════════════════════════════════════ */
+.day-header {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:9px 12px; margin-bottom:10px; flex-shrink:0;
+}
+.day-header-date { font-size:13px; font-weight:700; }
+.day-header-sub { font-family:var(--font-mono); font-size:10px; color:var(--text-muted); margin-top:3px; }
+
+.capture-list { display:flex; flex-direction:column; gap:7px; overflow-y:auto; flex:1; }
+
+.capture-item {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); overflow:hidden;
+  cursor:pointer; transition:all .15s; display:flex;
+  -webkit-tap-highlight-color:transparent;
+}
+.capture-item:hover { border-color:var(--green); }
+.capture-item.active { border-color:var(--green); background:rgba(74,222,128,.04); }
+
+.cap-thumb {
+  width:64px; flex-shrink:0;
+  background:#0d1a0d; position:relative;
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+}
+.cap-thumb::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse,#1a3020,#0a1208); }
+.cap-thumb-num {
+  position:relative; z-index:1;
+  font-size:18px; font-weight:800; font-family:var(--font-mono);
+}
+.cap-thumb-num.high { color:var(--red); }
+.cap-thumb-num.med  { color:var(--amber); }
+.cap-thumb-num.low  { color:var(--green); }
+
+.cap-body { flex:1; padding:9px 12px; min-width:0; }
+.cap-time { font-family:var(--font-mono); font-size:10px; color:var(--text-muted); }
+.cap-title { font-size:12px; font-weight:600; margin:3px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cap-chips { display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap; }
+.cap-chip {
+  font-family:var(--font-mono); font-size:9px;
+  padding:2px 6px; border-radius:4px; border:1px solid;
+}
+
+.empty-state {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:10px; opacity:.35;
+}
+.empty-icon { font-size:34px; display:flex; align-items:center; justify-content:center; opacity:.6; }
+.empty-text { font-family:var(--font-mono); font-size:10px; text-align:center; color:var(--text-muted); line-height:1.7; }
+
+/* range summary */
+.range-sum-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:10px; flex-shrink:0; }
+.rss-cell { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px; text-align:center; }
+.rss-val { font-size:18px; font-weight:800; }
+.range-sum-list { display:flex; flex-direction:column; gap:7px; overflow-y:auto; flex:1; }
+.rsd-group { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
+.rsd-header { padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:background .15s; }
+.rsd-header:hover { background:rgba(74,222,128,.03); }
+.rsd-title { font-size:12px; font-weight:600; }
+.rsd-sub { font-family:var(--font-mono); font-size:10px; }
+.rsd-body { display:none; }
+.rsd-body.open { display:block; }
+.rsd-row { padding:7px 12px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border); cursor:pointer; transition:background .15s; font-size:11px; gap:8px; }
+.rsd-row:hover { background:rgba(74,222,128,.04); }
+
+/* ════════════════════════════════════════
+   IMAGE VIEWER
+════════════════════════════════════════ */
+.viewer-panel { gap:0; }
+
+.image-frame {
+  flex:1; min-height:240px;
+  background:#0a1408; border:1px solid var(--border);
+  border-radius:var(--radius-md); position:relative;
+  overflow:hidden; cursor:pointer;
+  transition:border-color .2s;
+  display:flex; align-items:center; justify-content:center;
+}
+.image-frame:hover { border-color:var(--green); }
+.image-frame::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 45% 55%,#1c3a22,#080f08 70%); }
+.image-frame::after {
+  content:''; position:absolute; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--green-glow),transparent);
+  animation:scan 3.5s linear infinite;
+}
+
+.img-badges {
+  position:absolute; top:10px; left:10px;
+  display:flex; flex-direction:column; gap:5px; z-index:2;
+}
+.ib {
+  font-family:var(--font-mono); font-size:10px; font-weight:700;
+  padding:3px 8px; border-radius:4px; border:1px solid;
+  backdrop-filter:blur(8px);
+}
+.ib.count   { background:rgba(248,113,113,.15); border-color:rgba(248,113,113,.5); color:var(--red); }
+.ib.species { background:rgba(74,222,128,.1);   border-color:rgba(74,222,128,.4);  color:var(--green); }
+.ib.conf    { background:rgba(96,165,250,.1);   border-color:rgba(96,165,250,.35); color:var(--blue); }
+
+.img-hint { position:absolute; bottom:9px; right:9px; z-index:2; font-family:var(--font-mono); font-size:8px; color:var(--text-dim); letter-spacing:1px; }
+
+.insect-dot {
+  position:absolute; z-index:1;
+  transform:translate(-50%,-50%);
+  opacity:0; animation:dotIn .4s ease forwards;
+}
+.insect-dot-box {
+  width:20px; height:14px;
+  border:1.5px solid var(--red); border-radius:2px; position:relative;
+}
+.insect-dot-box::after {
+  content:''; position:absolute; inset:3px;
+  border-radius:50%; background:rgba(248,113,113,.4);
+}
+
+.img-empty { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:8px; opacity:.28; }
+.img-empty-icon { font-size:38px; }
+.img-empty-text { font-family:var(--font-mono); font-size:10px; text-align:center; color:var(--text-muted); line-height:1.7; }
+
+.img-meta {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:7px; margin-top:8px; flex-shrink:0;
+}
+.imc {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:8px 10px;
+}
+.imc-lbl { font-family:var(--font-mono); font-size:8px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:3px; }
+.imc-val { font-size:12px; font-weight:700; }
+
+.img-nav { display:flex; align-items:center; gap:7px; margin-top:8px; flex-shrink:0; }
+.nav-btn {
+  background:var(--surface2); border:1px solid var(--border);
+  color:var(--text-muted); border-radius:var(--radius-sm);
+  width:32px; height:32px; cursor:pointer; font-size:14px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .15s; flex-shrink:0; color:var(--text-muted);
+}
+.nav-btn:hover:not(:disabled) { border-color:var(--green); color:var(--green); }
+.nav-btn:disabled { opacity:.3; cursor:default; }
+
+.thumb-strip { display:flex; gap:6px; overflow-x:auto; flex:1; padding-bottom:2px; }
+.img-thumb {
+  flex-shrink:0; width:52px; height:40px;
+  background:var(--surface3); border:1px solid var(--border);
+  border-radius:var(--radius-sm); cursor:pointer; overflow:hidden;
+  position:relative; display:flex; align-items:center; justify-content:center;
+  transition:all .15s;
+}
+.img-thumb:hover { border-color:rgba(74,222,128,.5); }
+.img-thumb.active { border-color:var(--green); }
+.img-thumb-bg { position:absolute; inset:0; background:radial-gradient(ellipse,#1a3020,#0a1208); }
+.img-thumb-cnt { position:relative; z-index:1; font-family:var(--font-mono); font-size:13px; font-weight:700; }
+.img-thumb-cnt.high { color:var(--red); }
+.img-thumb-cnt.med  { color:var(--amber); }
+.img-thumb-cnt.low  { color:var(--green); }
+.img-thumb-t { position:absolute; bottom:2px; left:0; right:0; text-align:center; font-family:var(--font-mono); font-size:7px; color:var(--text-dim); z-index:1; }
+
+/* ════════════════════════════════════════
+   BOTTOM NAV (mobile)
+════════════════════════════════════════ */
+.bottom-nav {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0; z-index:55;
+  height:var(--bottom-nav-h);
+  background:rgba(10,15,10,.97);
+  border-top:1px solid var(--border);
+  backdrop-filter:blur(14px);
+}
+.bn-inner { display:flex; height:100%; }
+.bn-tab {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:6px;
+  cursor:pointer; border:none; background:none;
+  color:var(--text-muted);
+  font-family:var(--font-mono); font-size:9px; letter-spacing:.8px;
+  transition:all .2s; padding:8px 4px;
+  -webkit-tap-highlight-color:transparent;
+  position:relative;
+}
+.bn-tab.active::before {
+  content:''; position:absolute; top:0; left:20%; right:20%; height:2px;
+  background:var(--green); border-radius:0 0 2px 2px;
+}
+.bn-tab.active { color:var(--green); font-weight:600; }
+.bn-icon { font-size:18px; display:flex; align-items:center; justify-content:center; width:28px; height:28px; }
+
+/* ════════════════════════════════════════
+   MODAL
+════════════════════════════════════════ */
+.modal {
+  display:none; position:fixed; inset:0; z-index:100;
+  background:rgba(0,0,0,.88); backdrop-filter:blur(8px);
+  align-items:center; justify-content:center; padding:16px;
+}
+.modal.open { display:flex; }
+.modal-box {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:20px;
+  max-width:560px; width:100%;
+  animation:fadeUp .25s ease;
+  max-height:90dvh; overflow-y:auto;
+}
+.modal-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.modal-ttl { font-size:13px; font-weight:700; }
+.modal-x { background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer; line-height:1; padding:4px; }
+.modal-x:hover { color:var(--text); }
+.modal-img {
+  width:100%; aspect-ratio:4/3;
+  background:#0a1208; border-radius:var(--radius-sm); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden; margin-bottom:14px;
+}
+.modal-img::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 45% 55%,#1c3a22,#080f08 70%); }
+.modal-img-txt { position:relative; z-index:1; font-family:var(--font-mono); font-size:10px; color:var(--text-muted); text-align:center; line-height:1.8; }
+.modal-meta { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.mmc { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:9px 10px; }
+.mmc-lbl { font-family:var(--font-mono); font-size:8px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:3px; }
+.mmc-val { font-size:12px; font-weight:700; }
+
+/* Logout confirm modal */
+.logout-modal-box { max-width:340px; text-align:center; }
+.logout-icon { font-size:40px; margin-bottom:14px; display:flex; justify-content:center; color:var(--red); }
+.logout-title { font-size:16px; font-weight:800; margin-bottom:6px; }
+.logout-sub { font-family:var(--font-mono); font-size:10px; color:var(--text-muted); margin-bottom:20px; line-height:1.7; }
+.logout-btns { display:flex; gap:10px; }
+.btn-confirm-logout {
+  flex:1; padding:10px; background:var(--red-dim);
+  border:1px solid rgba(248,113,113,.4); border-radius:var(--radius-sm);
+  color:var(--red); font-family:var(--font-mono); font-size:10px;
+  letter-spacing:1px; cursor:pointer; transition:all .2s;
+}
+.btn-confirm-logout:hover { background:rgba(248,113,113,.2); }
+.btn-cancel {
+  flex:1; padding:10px; background:var(--surface2);
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  color:var(--text-muted); font-family:var(--font-mono); font-size:10px;
+  letter-spacing:1px; cursor:pointer; transition:all .2s;
+}
+.btn-cancel:hover { border-color:var(--green); color:var(--green); }
+
+/* ════════════════════════════════════════
+   LOADING / TOAST
+════════════════════════════════════════ */
+.toast {
+  position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-md); padding:10px 18px;
+  font-family:var(--font-mono); font-size:11px;
+  z-index:200; animation:toastIn .3s ease;
+  white-space:nowrap; pointer-events:none;
+}
+.toast.success { border-color:rgba(74,222,128,.4); color:var(--green); }
+.toast.error   { border-color:rgba(248,113,113,.4); color:var(--red); }
+.toast.info    { border-color:rgba(96,165,250,.3);  color:var(--blue); }
+
+@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+/* Spinner */
+.spinner {
+  width:16px; height:16px; border-radius:50%;
+  border:2px solid var(--border); border-top-color:var(--green);
+  animation:spin .8s linear infinite; display:inline-block;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ════════════════════════════════════════
+   ANIMATIONS
+════════════════════════════════════════ */
+@keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:.3} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideR { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
+@keyframes scan   { 0%{top:0;opacity:0} 8%{opacity:1} 92%{opacity:1} 100%{top:100%;opacity:0} }
+@keyframes dotIn  { from{opacity:0;transform:translate(-50%,-50%) scale(.4)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
+
+
+/* ════════════════════════════════════════
+   LIGHT THEME OVERRIDES — hardcoded dark values
+════════════════════════════════════════ */
+[data-theme="light"] .header {
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 1px 0 var(--border), 0 2px 16px rgba(0,0,0,.06);
+}
+[data-theme="light"] .bottom-nav {
+  background: rgba(255,255,255,.97);
+  box-shadow: 0 -1px 0 var(--border);
+}
+[data-theme="light"] .cap-thumb {
+  background: var(--surface2);
+}
+[data-theme="light"] .cap-thumb::before {
+  background: linear-gradient(160deg, var(--surface2) 0%, var(--border) 100%);
+}
+[data-theme="light"] .capture-item.active .cap-thumb {
+  background: var(--green-dim);
+}
+[data-theme="light"] .capture-item.active .cap-thumb::before {
+  background: linear-gradient(160deg, var(--green-dim) 0%, #bbf7d0 100%);
+}
+[data-theme="light"] .img-thumb-bg {
+  background: linear-gradient(135deg, var(--surface2), var(--border));
+}
+/* Image frame stays intentionally dark — simulates camera night-vision */
+[data-theme="light"] .image-frame {
+  border-color: var(--border);
+  box-shadow: inset 0 0 0 1px var(--border-soft);
+}
+[data-theme="light"] .modal-img {
+  background: #1a2a1a;
+}
+[data-theme="light"] .logo-icon {
+  border-color: var(--green);
+}
+[data-theme="light"] .trap-bar {
+  background: var(--surface);
+  box-shadow: 0 1px 8px rgba(0,0,0,.06);
+}
+[data-theme="light"] .tstat {
+  background: var(--surface);
+}
+[data-theme="light"] .panel {
+  box-shadow: 0 1px 8px rgba(0,0,0,.05);
+}
+[data-theme="light"] .cal-day.has-data:not(.selected):not(.range-start):not(.range-end) {
+  background: rgba(22,163,74,.04);
+}
+[data-theme="light"] .cal-day:hover:not(.empty):not(.future) {
+  background: rgba(22,163,74,.08);
+}
+[data-theme="light"] .rsd-header:hover { background: rgba(22,163,74,.04); }
+[data-theme="light"] .rsd-row:hover    { background: rgba(22,163,74,.05); }
+[data-theme="light"] .capture-item.active { background: rgba(22,163,74,.05); }
+[data-theme="light"] .mode-tab.active {
+  background: var(--green-dim); border-color: var(--green);
+}
+[data-theme="light"] .btn-apply {
+  background: var(--green-dim); border-color: var(--green);
+}
+[data-theme="light"] .live-badge {
+  background: var(--green-dim); border-color: var(--green);
+}
+
+/* ════════════════════════════════════════
+   RESPONSIVE — TABLET (≤1100px)
+════════════════════════════════════════ */
+@media(max-width:1100px) {
+  .main { grid-template-columns: 272px 1fr; }
+  .viewer-panel { display:none; }
+}
+
+/* ════════════════════════════════════════
+   RESPONSIVE — MOBILE (≤700px)
+════════════════════════════════════════ */
+@media(max-width:700px) {
+  :root { --header-h:52px; }
+
+  .header { padding:0 14px; }
+  .logo-sub { display:none; }
+  .clock-badge { display:none; }
+  .live-badge .live-text { display:none; }
+  .btn-logout-text { display:none; }
+  .btn-logout { padding:6px 8px; }
+
+  .trap-bar {
+    margin:12px 14px 0;
+    padding:12px 14px; gap:10px;
+  }
+  .vdiv { display:none; }
+  .trap-bar-left {
+    display:grid;
+    grid-template-columns: auto 1fr;
+    gap:8px 12px;
+    width:100%;
+  }
+  .trap-online-dot { grid-row:1; align-self:center; }
+  .trap-name { grid-row:1; font-size:15px; }
+  .trap-field { grid-column:1/-1; }
+  .trap-stats { width:100%; justify-content:stretch; }
+  .tstat { flex:1; min-width:0; padding:7px 8px; }
+  .tstat-val { font-size:18px; }
+
+  .main {
+    grid-template-columns:1fr;
+    padding:12px 14px;
+    padding-bottom:calc(var(--bottom-nav-h) + 14px);
+  }
+
+  .panel { display:none; }
+  .panel.mobile-active { display:flex; animation:fadeUp .25s ease; }
+
+  .bottom-nav { display:flex; }
+
+  .img-meta { grid-template-columns:repeat(2,1fr); }
+
+  .modal-meta { grid-template-columns:repeat(2,1fr); }
+  .logout-btns { flex-direction:column; }
+}
+
+/* ════════════════════════════════════════
+   RESPONSIVE — SMALL MOBILE (≤380px)
+════════════════════════════════════════ */
+@media(max-width:380px) {
+  .trap-stats { gap:5px; }
+  .tstat-val { font-size:16px; }
+  .tstat-lbl { font-size:7px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     HEADER
+══════════════════════════════════════ -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 1 1.1 4.8 4 4 0 0 1-1.3 2.9c-1 .8-2.1 1.2-3.3 1.3-.2-1.7.4-3.5 1.3-5"/></svg></div>
+    <div>
+      <div class="logo-name">SPY<span>TRAP
+      </span></div>
+      <div class="logo-sub">MONITORAMENTO DE PRAGAS</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      <span class="live-text">AO VIVO</span>
+    </div>
+    <div class="clock-badge" id="clock">--:--:--</div>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Alternar tema">
+      <div class="theme-track">
+        <div class="theme-thumb" id="themeThumb"></div>
+      </div>
+      <span class="theme-lbl" id="themeLbl">CLARO</span>
+    </button>
+    <button class="btn-logout" onclick="confirmLogout()">
+      <span class="btn-logout-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg></span>
+      <span class="btn-logout-text">SAIR</span>
+    </button>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════
+     TRAP BAR
+══════════════════════════════════════ -->
+<div class="trap-bar" id="trapBar">
+  <div class="trap-bar-left">
+    <div class="trap-online-dot" id="trapStatusDot"></div>
+    <div class="trap-name" id="trapName">Armadilha A-01</div>
+    <div class="vdiv"></div>
+    <div class="trap-field">
+      <div class="label">Localização</div>
+      <div class="trap-field-val coords" id="trapCoords">—</div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="trap-field">
+      <div class="label">Última captura</div>
+      <div class="trap-field-val" id="trapLastCap">—</div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="trap-field">
+      <div class="label">Praga alvo</div>
+      <div class="trap-field-val species">Spodoptera frugiperda</div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="trap-field">
+      <div class="label">Status</div>
+      <div class="trap-field-val online" id="trapStatus"><span class="status-pill online">Online</span></div>
+    </div>
+  </div>
+  <div class="trap-stats">
+    <div class="tstat a"><div class="tstat-val" id="sTotalMonth">—</div><div class="tstat-lbl">Mês atual</div></div>
+    <div class="tstat r"><div class="tstat-val" id="sPeakDay">—</div><div class="tstat-lbl">Pico/dia</div></div>
+    <div class="tstat g"><div class="tstat-val" id="sCaptures">—</div><div class="tstat-lbl">Capturas/mês</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN
+══════════════════════════════════════ -->
+<div class="main">
+
+  <!-- COL 1: CALENDAR -->
+  <div class="panel" id="panelCalendar" data-panel="calendar">
+    <div class="ph">
+      <div class="pt">Navegação</div>
+      <span class="badge bb" id="viewModeBadge">DIA ÚNICO</span>
+    </div>
+    <div class="mode-tabs">
+      <div class="mode-tab active" id="tabDay"   onclick="setMode('day')">DIA</div>
+      <div class="mode-tab"        id="tabRange" onclick="setMode('range')">PERÍODO</div>
+    </div>
+    <div class="cal-nav">
+      <button class="cal-btn" onclick="prevMonth()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><polyline points="15 18 9 12 15 6"/></svg></button>
+      <div class="cal-month-label" id="calMonth">—</div>
+      <button class="cal-btn" onclick="nextMonth()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+    <div class="cal-weekdays">
+      <div class="cal-wd">D</div><div class="cal-wd">S</div><div class="cal-wd">T</div>
+      <div class="cal-wd">Q</div><div class="cal-wd">Q</div><div class="cal-wd">S</div>
+      <div class="cal-wd">S</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+
+    <div class="range-controls" id="rangeControls" style="display:none">
+      <div class="range-row">
+        <div class="range-lbl">DE</div>
+        <input type="date" class="range-input" id="rangeStart">
+      </div>
+      <div class="range-row">
+        <div class="range-lbl">ATÉ</div>
+        <input type="date" class="range-input" id="rangeEnd">
+      </div>
+      <button class="btn-apply" onclick="applyRange()">APLICAR PERÍODO</button>
+      <button class="btn-clear" onclick="clearRange()">Limpar seleção</button>
+    </div>
+
+    <div class="cal-legend">
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--red)"></div>Alta</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--amber)"></div>Média</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--green)"></div>Baixa</div>
+    </div>
+  </div>
+
+  <!-- COL 2: CAPTURE LIST -->
+  <div class="panel" id="panelCaptures" data-panel="captures">
+    <div class="ph">
+      <div class="pt" id="capturesTitle">Capturas do Dia</div>
+      <span class="badge bg" id="capturesBadge">—</span>
+    </div>
+    <div class="day-header" id="dayHeader" style="display:none">
+      <div class="day-header-date" id="dayHeaderDate">—</div>
+      <div class="day-header-sub"  id="dayHeaderSub">—</div>
+    </div>
+    <div id="captureListContainer" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
+  </div>
+
+  <!-- COL 3: IMAGE VIEWER -->
+  <div class="panel viewer-panel" id="panelViewer" data-panel="viewer">
+    <div class="ph">
+      <div class="pt">Visualizador</div>
+      <span class="badge bg" id="viewerBadge">IA Processada</span>
+    </div>
+
+    <div class="image-frame" id="imgFrame" onclick="openModal()">
+      <div class="img-badges" id="imgBadges" style="display:none">
+        <span class="ib count"   id="ibCount">—</span>
+        <span class="ib species">Spodoptera frugiperda</span>
+        <span class="ib conf"    id="ibConf">—</span>
+      </div>
+      <div id="imgDots"></div>
+      <div class="img-empty" id="imgEmpty">
+        <div class="img-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3L14.5 4z"/><circle cx="12" cy="13" r="3"/></svg></div>
+        <div class="img-empty-text">Selecione uma captura<br>para visualizar</div>
+      </div>
+      <div class="img-hint">CLIQUE PARA AMPLIAR</div>
+    </div>
+
+    <div class="img-meta" id="imgMeta" style="opacity:.3">
+      <div class="imc"><div class="imc-lbl">Data</div><div class="imc-val" id="metaDate">—</div></div>
+      <div class="imc"><div class="imc-lbl">Horário</div><div class="imc-val" id="metaTime">—</div></div>
+      <div class="imc"><div class="imc-lbl">Infestação</div><div class="imc-val" id="metaLevel">—</div></div>
+      <div class="imc"><div class="imc-lbl">Insetos</div><div class="imc-val" id="metaCount">—</div></div>
+    </div>
+
+    <div class="img-nav" id="imgNav" style="opacity:.3">
+      <button class="nav-btn" id="btnPrev" onclick="navigateCapture(-1)" disabled><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><polyline points="15 18 9 12 15 6"/></svg></button>
+      <div class="thumb-strip" id="thumbStrip"></div>
+      <button class="nav-btn" id="btnNext" onclick="navigateCapture(1)"  disabled><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ══════════════════════════════════════
+     BOTTOM NAV (mobile)
+══════════════════════════════════════ -->
+<nav class="bottom-nav">
+  <div class="bn-inner">
+    <button class="bn-tab active" id="bnCalendar" onclick="mobileTab('calendar')">
+      <span class="bn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg></span>
+      <span>CALENDÁRIO</span>
+    </button>
+    <button class="bn-tab" id="bnCaptures" onclick="mobileTab('captures')">
+      <span class="bn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="12" x2="16" y1="11" y2="11"/><line x1="12" x2="16" y1="15" y2="15"/><line x1="8" x2="8.01" y1="11" y2="11"/><line x1="8" x2="8.01" y1="15" y2="15"/></svg></span>
+      <span>CAPTURAS</span>
+    </button>
+    <button class="bn-tab" id="bnViewer" onclick="mobileTab('viewer')">
+      <span class="bn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="1"/><path d="M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0"/></svg></span>
+      <span>IMAGEM</span>
+    </button>
+  </div>
+</nav>
+
+<!-- IMAGE MODAL -->
+<div class="modal" id="imgModal" onclick="handleModalClick(event,'imgModal')">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-ttl" id="modalTitle">—</div>
+      <button class="modal-x" onclick="closeModal('imgModal')">✕</button>
+    </div>
+    <div class="modal-img">
+      <!-- ── API HOOK: substituir por <img id="modalImg" src=""> quando integrar ── -->
+      <div class="modal-img-txt">[ Imagem real da armadilha ]<br><br>Integrar URL da API aqui</div>
+    </div>
+    <div class="modal-meta">
+      <div class="mmc"><div class="mmc-lbl">Espécie</div><div class="mmc-val" style="font-style:italic;font-size:10px">Spodoptera frugiperda</div></div>
+      <div class="mmc"><div class="mmc-lbl">Detectados</div><div class="mmc-val" id="modalCount" style="color:var(--red)">—</div></div>
+      <div class="mmc"><div class="mmc-lbl">Confiança IA</div><div class="mmc-val" id="modalConf" style="color:var(--blue)">—</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGOUT CONFIRM MODAL -->
+<div class="modal" id="logoutModal" onclick="handleModalClick(event,'logoutModal')">
+  <div class="modal-box logout-modal-box">
+    <div class="logout-icon"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg></div>
+    <div class="logout-title">Sair do sistema?</div>
+    <div class="logout-sub">Você será redirecionado<br>para a página de login.</div>
+    <div class="logout-btns">
+      <button class="btn-confirm-logout" onclick="doLogout()">CONFIRMAR SAÍDA</button>
+      <button class="btn-cancel" onclick="closeModal('logoutModal')">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   ██████████████████████████████████████████████████████████████
+   ██                                                          ██
+   ██   CAMADA DE API — SUBSTITUA AQUI PARA DADOS REAIS       ██
+   ██                                                          ██
+   ██████████████████████████████████████████████████████████████
+
+   Todos os pontos de integração estão marcados com "API HOOK".
+   Para usar dados reais, altere as funções abaixo.
+   O restante do código consome apenas funções desta camada.
+═══════════════════════════════════════════════════════════════ */
+const API = {
+
+  // ── CONFIG ──────────────────────────────────────────────────
+  // Altere para o endereço real do seu backend no Render:
+  BASE_URL: 'http://localhost:3000',
+
+  getHeaders() {
+    const token = localStorage.getItem('agrosentinel_token')
+                || sessionStorage.getItem('agrosentinel_token');
+    return {
+      'Content-Type':  'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    };
+  },
+
+  // ── MÉTODOS ─────────────────────────────────────────────────
+
+  /**
+   * Dados gerais da armadilha (nome, coordenadas, status, stats do mês)
+   * API HOOK: GET /traps/{trapId}
+   * Retorno esperado: { id, name, lat, lng, status, lastCapture, monthTotal, peakDay, monthCaptures }
+   */
+  async getTrapInfo(trapId = 'A-01') {
+    // ── MOCK ── remova este bloco e descomente o fetch abaixo
+    return {
+      id: 'A-01',
+      name: 'Armadilha A-01',
+      lat: "19°27'12\"S",
+      lng: "47°58'44\"W",
+      status: 'online',
+      lastCapture: 'Hoje às 19:05',
+      monthTotal: 63,
+      peakDay: 18,
+      monthCaptures: 21,
+    };
+    // ── REAL ──
+    // const res = await fetch(`${this.BASE_URL}/traps/${trapId}`, { headers: this.getHeaders() });
+    // if (!res.ok) throw new Error('Falha ao buscar dados da armadilha');
+    // return res.json();
+  },
+
+  /**
+   * Capturas de um dia específico
+   * API HOOK: GET /traps/{trapId}/captures?date=YYYY-MM-DD
+   * Retorno esperado: Array<{ id, time, count, level, confidence, imageUrl, boundingBoxes }>
+   *   boundingBoxes: Array<{ x: %, y: % }> — coordenadas em % para overlay
+   */
+  async getCapturesByDate(trapId = 'A-01', date) {
+    // ── MOCK ── remova este bloco e descomente o fetch abaixo
+    return MOCK_DATA[date] || [];
+    // ── REAL ──
+    // const res = await fetch(`${this.BASE_URL}/traps/${trapId}/captures?date=${date}`, { headers: this.getHeaders() });
+    // if (!res.ok) throw new Error('Falha ao buscar capturas');
+    // return res.json();
+  },
+
+  /**
+   * Capturas de um intervalo de datas
+   * API HOOK: GET /traps/{trapId}/captures?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+   * Retorno esperado: Array<{ date: 'YYYY-MM-DD', captures: [...] }>
+   */
+  async getCapturesByRange(trapId = 'A-01', startDate, endDate) {
+    // ── MOCK ──
+    const results = [];
+    const start = new Date(startDate + 'T12:00:00');
+    const end   = new Date(endDate   + 'T12:00:00');
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = dateKey(d);
+      if (MOCK_DATA[key]) results.push({ date: key, captures: MOCK_DATA[key] });
+    }
+    return results;
+    // ── REAL ──
+    // const res = await fetch(`${this.BASE_URL}/traps/${trapId}/captures?startDate=${startDate}&endDate=${endDate}`, { headers: this.getHeaders() });
+    // if (!res.ok) throw new Error('Falha ao buscar período');
+    // return res.json();
+  },
+
+  /**
+   * Dias com capturas num mês (para pintar o calendário)
+   * API HOOK: GET /traps/{trapId}/calendar?year=YYYY&month=MM
+   * Retorno esperado: Array<{ date: 'YYYY-MM-DD', count, maxLevel }>
+   */
+  async getCalendarMonth(trapId = 'A-01', year, month) {
+    // ── MOCK ──
+    const result = [];
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, month, d);
+      const key  = dateKey(date);
+      if (MOCK_DATA[key]) {
+        const caps = MOCK_DATA[key];
+        const maxLevel = caps.some(c => c.level==='high') ? 'high' : caps.some(c => c.level==='med') ? 'med' : 'low';
+        result.push({ date: key, count: caps.length, maxLevel });
+      }
+    }
+    return result;
+    // ── REAL ──
+    // const res = await fetch(`${this.BASE_URL}/traps/${trapId}/calendar?year=${year}&month=${month+1}`, { headers: this.getHeaders() });
+    // if (!res.ok) throw new Error('Falha ao buscar calendário');
+    // return res.json();
+  },
+
+  /**
+   * Logout — invalida token no backend
+   * API HOOK: POST /auth/logout
+   */
+  async logout() {
+    const token = localStorage.getItem('agrosentinel_token')
+               || sessionStorage.getItem('agrosentinel_token');
+    if (token) {
+      try {
+        await fetch(`${this.BASE_URL}/api/auth/logout`, {
+          method:  'POST',
+          headers: this.getHeaders(),
+        });
+      } catch { /* ignora erros de rede no logout */ }
+    }
+    localStorage.removeItem('agrosentinel_token');
+    localStorage.removeItem('agrosentinel_user');
+    sessionStorage.removeItem('agrosentinel_token');
+    sessionStorage.removeItem('agrosentinel_user');
+    window.location.href = 'login.html';
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   DADOS MOCK — gerados automaticamente para os últimos 35 dias
+   API HOOK: Este bloco inteiro pode ser removido quando usar API real
+═══════════════════════════════════════════════════════════════ */
+const TODAY = new Date();
+TODAY.setHours(0,0,0,0);
+
+const MOCK_DATA = (() => {
+  const data = {};
+  const hours = ['06:20','07:15','12:45','14:30','19:05'];
+  const levelOf = n => n >= 8 ? 'high' : n >= 4 ? 'med' : 'low';
+
+  for (let i = 0; i <= 35; i++) {
+    const d = new Date(TODAY); d.setDate(TODAY.getDate() - i);
+    const key = dateKey(d);
+    if (Math.random() < 0.08) continue; // dias sem captura
+    const num = Math.floor(Math.random() * 3) + 3; // 3 a 5 capturas
+    const chosen = [...hours].sort(() => Math.random() - .5).slice(0, num).sort();
+    data[key] = chosen.map((t, idx) => {
+      const cnt = Math.floor(Math.random() * 14) + 1;
+      return {
+        id: `${key}-${idx}`,
+        time: t,
+        count: cnt,
+        level: levelOf(cnt),
+        confidence: Math.floor(Math.random() * 12) + 85,
+        imageUrl: null, // API HOOK: URL real da imagem vem aqui
+        boundingBoxes: Array.from({length: Math.min(cnt, 10)}, () => ({
+          x: Math.floor(Math.random() * 76) + 8,
+          y: Math.floor(Math.random() * 72) + 8,
+        })),
+      };
+    });
+  }
+  // Hoje garantido
+  data[dateKey(TODAY)] = [
+    { id:`${dateKey(TODAY)}-0`, time:'06:20', count:3,  level:'low',  confidence:92, imageUrl:null, boundingBoxes:[{x:30,y:40},{x:55,y:60},{x:70,y:25}] },
+    { id:`${dateKey(TODAY)}-1`, time:'12:45', count:9,  level:'high', confidence:96, imageUrl:null, boundingBoxes:[{x:22,y:38},{x:45,y:28},{x:60,y:52},{x:35,y:65},{x:72,y:33},{x:50,y:72},{x:18,y:60},{x:80,y:60},{x:65,y:22}] },
+    { id:`${dateKey(TODAY)}-2`, time:'19:05', count:6,  level:'med',  confidence:89, imageUrl:null, boundingBoxes:[{x:25,y:35},{x:50,y:55},{x:70,y:40},{x:38,y:70},{x:62,y:25},{x:45,y:80}] },
+  ];
+  return data;
+})();
+
+/* ═══════════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════════ */
+function dateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtDate(d) {
+  return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+const MONTHS_PT   = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+const MONTHS_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DAY_NAMES   = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const DAY_SHORT   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const levelLabel  = { high:'🔴 Alta', med:'🟡 Média', low:'🟢 Baixa' };
+const levelColor  = { high:'var(--red)', med:'var(--amber)', low:'var(--green)' };
+const chipStyle   = (l) => l==='high'
+  ? 'color:var(--red);border-color:rgba(248,113,113,.3);background:var(--red-dim)'
+  : l==='med'
+  ? 'color:var(--amber);border-color:rgba(245,158,11,.3);background:var(--amber-dim)'
+  : 'color:var(--green);border-color:rgba(74,222,128,.3);background:var(--green-dim)';
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function showToast(msg, type='info', duration=2800) {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), duration);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+let viewMode = 'day';
+let calYear  = TODAY.getFullYear();
+let calMonth = TODAY.getMonth();
+let calendarData = {}; // { 'YYYY-MM-DD': { count, maxLevel } }
+let selectedDay  = dateKey(TODAY);
+let rangeStart   = null, rangeEnd = null;
+let activeCapture  = null;
+let activeDayKey   = dateKey(TODAY);
+let activeDayIndex = 0;
+let activeDayCaptures = [];
+let mobileActivePanel = 'calendar';
+
+/* ═══════════════════════════════════════════════════════════════
+   TEMA
+═══════════════════════════════════════════════════════════════ */
+const THEME_KEY = 'agrosentinel_theme';
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const lbl = document.getElementById('themeLbl');
+  if (lbl) lbl.textContent = theme === 'dark' ? 'ESCURO' : 'CLARO';
+  localStorage.setItem(THEME_KEY, theme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+// Restaura tema ao carregar
+(function() {
+  const saved = localStorage.getItem(THEME_KEY) || 'light';
+  applyTheme(saved);
+})();
+
+/* ═══════════════════════════════════════════════════════════════
+   CLOCK
+═══════════════════════════════════════════════════════════════ */
+(function initClock() {
+  const el = document.getElementById('clock');
+  const tick = () => { el.textContent = new Date().toLocaleTimeString('pt-BR'); };
+  tick(); setInterval(tick, 1000);
+})();
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE TABS
+═══════════════════════════════════════════════════════════════ */
+function mobileTab(panel) {
+  mobileActivePanel = panel;
+  ['calendar','captures','viewer'].forEach(p => {
+    const el = document.getElementById(`panel${p.charAt(0).toUpperCase()+p.slice(1)}`);
+    const bn = document.getElementById(`bn${p.charAt(0).toUpperCase()+p.slice(1)}`);
+    if (window.innerWidth <= 700) {
+      el.classList.toggle('mobile-active', p === panel);
+    }
+    bn.classList.toggle('active', p === panel);
+  });
+}
+
+function syncMobilePanels() {
+  if (window.innerWidth <= 700) {
+    ['calendar','captures','viewer'].forEach(p => {
+      const el = document.getElementById(`panel${p.charAt(0).toUpperCase()+p.slice(1)}`);
+      el.classList.toggle('mobile-active', p === mobileActivePanel);
+    });
+  } else {
+    ['panelCalendar','panelCaptures'].forEach(id => {
+      document.getElementById(id).classList.remove('mobile-active');
+      document.getElementById(id).style.display = '';
+    });
+  }
+}
+
+window.addEventListener('resize', syncMobilePanels);
+
+/* ═══════════════════════════════════════════════════════════════
+   TRAP INFO
+═══════════════════════════════════════════════════════════════ */
+async function loadTrapInfo() {
+  try {
+    const info = await API.getTrapInfo();
+    document.getElementById('trapName').textContent     = info.name;
+    document.getElementById('trapCoords').textContent   = `${info.lat}, ${info.lng}`;
+    document.getElementById('trapLastCap').textContent  = info.lastCapture;
+    document.getElementById('sTotalMonth').textContent  = info.monthTotal;
+    document.getElementById('sPeakDay').textContent     = info.peakDay;
+    document.getElementById('sCaptures').textContent    = info.monthCaptures;
+
+    const dot = document.getElementById('trapStatusDot');
+    const statusEl = document.getElementById('trapStatus');
+    if (info.status !== 'online') {
+      dot.style.background = 'var(--red)';
+      dot.style.boxShadow  = '0 0 8px var(--red)';
+      statusEl.innerHTML = '<span class="status-pill offline">Offline</span>';
+      statusEl.style.color = 'var(--red)';
+    }
+  } catch(e) {
+    showToast('Erro ao carregar dados da armadilha', 'error');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODE SWITCH
+═══════════════════════════════════════════════════════════════ */
+function setMode(m) {
+  viewMode = m;
+  document.getElementById('tabDay').classList.toggle('active', m==='day');
+  document.getElementById('tabRange').classList.toggle('active', m==='range');
+  document.getElementById('rangeControls').style.display = m==='range' ? 'flex' : 'none';
+  if (m==='range') document.getElementById('rangeControls').style.flexDirection = 'column';
+  document.getElementById('viewModeBadge').textContent = m==='day' ? 'DIA ÚNICO' : 'PERÍODO';
+
+  if (m === 'day') {
+    rangeStart = null; rangeEnd = null;
+    loadCalendarMonth(calYear, calMonth);
+    loadDayCaptures(selectedDay);
+  } else {
+    loadCalendarMonth(calYear, calMonth);
+    renderRangeSummary();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CALENDAR
+═══════════════════════════════════════════════════════════════ */
+function prevMonth() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  loadCalendarMonth(calYear, calMonth);
+}
+function nextMonth() {
+  const now = TODAY;
+  if (calYear > now.getFullYear() || (calYear === now.getFullYear() && calMonth >= now.getMonth())) return;
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  loadCalendarMonth(calYear, calMonth);
+}
+
+async function loadCalendarMonth(year, month) {
+  document.getElementById('calMonth').textContent = `${MONTHS_PT[month]} ${year}`;
+  try {
+    const days = await API.getCalendarMonth('A-01', year, month);
+    calendarData = {};
+    days.forEach(d => { calendarData[d.date] = d; });
+    renderCalendar();
+  } catch(e) {
+    showToast('Erro ao carregar calendário', 'error');
+  }
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  for (let i = 0; i < firstDay; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day empty';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(calYear, calMonth, d);
+    const key  = dateKey(date);
+    const isFuture = date > TODAY;
+    const isToday  = key === dateKey(TODAY);
+    const info = calendarData[key];
+
+    const el = document.createElement('div');
+    let cls = 'cal-day';
+    if (isFuture) { cls += ' future'; }
+    else {
+      if (info) cls += ' has-data';
+      if (viewMode === 'day' && key === selectedDay) cls += ' selected';
+      if (viewMode === 'range' && rangeStart && rangeEnd) {
+        if (key === rangeStart || key === rangeEnd) cls += ' range-start';
+        else if (key > rangeStart && key < rangeEnd)  cls += ' in-range';
+      }
+      if (isToday && viewMode==='day' && key!==selectedDay) cls += ' today';
+    }
+    el.className = cls;
+
+    const dots = info
+      ? `<div class="cal-dots"><div class="cal-dot ${info.maxLevel}"></div></div>`
+      : '<div style="height:5px"></div>';
+    el.innerHTML = `<div class="cal-day-num">${d}</div>${dots}`;
+
+    if (!isFuture) {
+      el.addEventListener('click', () => {
+        if (viewMode === 'day') {
+          selectedDay = key;
+          renderCalendar();
+          loadDayCaptures(key);
+          clearViewer();
+          if (window.innerWidth <= 700) mobileTab('captures');
+        } else {
+          handleRangeClick(key);
+        }
+      });
+    }
+    grid.appendChild(el);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RANGE
+═══════════════════════════════════════════════════════════════ */
+function handleRangeClick(key) {
+  if (!rangeStart || (rangeStart && rangeEnd)) {
+    rangeStart = key; rangeEnd = null;
+    document.getElementById('rangeStart').value = key;
+    document.getElementById('rangeEnd').value   = '';
+  } else {
+    if (key < rangeStart) { rangeEnd = rangeStart; rangeStart = key; }
+    else rangeEnd = key;
+    document.getElementById('rangeStart').value = rangeStart;
+    document.getElementById('rangeEnd').value   = rangeEnd;
+    renderCalendar();
+    renderRangeSummary();
+  }
+  renderCalendar();
+}
+
+function applyRange() {
+  rangeStart = document.getElementById('rangeStart').value;
+  rangeEnd   = document.getElementById('rangeEnd').value;
+  if (!rangeStart || !rangeEnd) return;
+  if (rangeStart > rangeEnd) [rangeStart, rangeEnd] = [rangeEnd, rangeStart];
+  renderCalendar();
+  renderRangeSummary();
+}
+
+function clearRange() {
+  rangeStart = rangeEnd = null;
+  document.getElementById('rangeStart').value = '';
+  document.getElementById('rangeEnd').value   = '';
+  renderCalendar();
+  renderRangeSummary();
+}
+
+async function renderRangeSummary() {
+  document.getElementById('dayHeader').style.display = 'none';
+  const container = document.getElementById('captureListContainer');
+  container.innerHTML = '';
+  document.getElementById('capturesTitle').textContent = 'Período Selecionado';
+
+  if (!rangeStart || !rangeEnd) {
+    document.getElementById('capturesBadge').textContent = 'Selecione';
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg></div><div class="empty-text">Selecione um intervalo<br>no calendário ou nos campos</div></div>`;
+    return;
+  }
+
+  container.innerHTML = `<div class="empty-state"><div class="spinner"></div></div>`;
+  try {
+    const days = await API.getCapturesByRange('A-01', rangeStart, rangeEnd);
+    container.innerHTML = '';
+
+    let totalCaps = 0, totalInsects = 0;
+    days.forEach(d => {
+      totalCaps += d.captures.length;
+      totalInsects += d.captures.reduce((a,c) => a+c.count, 0);
+    });
+
+    document.getElementById('capturesBadge').textContent = `${days.length} dias`;
+
+    if (!days.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg></div><div class="empty-text">Nenhuma captura<br>neste período</div></div>`;
+      return;
+    }
+
+    const stats = document.createElement('div');
+    stats.className = 'range-sum-stats';
+    stats.innerHTML = `
+      <div class="rss-cell"><div class="label" style="margin-bottom:3px">Dias</div><div class="rss-val" style="color:var(--blue)">${days.length}</div></div>
+      <div class="rss-cell"><div class="label" style="margin-bottom:3px">Capturas</div><div class="rss-val" style="color:var(--green)">${totalCaps}</div></div>
+      <div class="rss-cell"><div class="label" style="margin-bottom:3px">Insetos</div><div class="rss-val" style="color:var(--amber)">${totalInsects}</div></div>`;
+    container.appendChild(stats);
+
+    const list = document.createElement('div');
+    list.className = 'range-sum-list';
+    days.forEach(({date, captures}) => {
+      const d = new Date(date + 'T12:00:00');
+      const total = captures.reduce((a,c) => a+c.count, 0);
+      const maxLvl = captures.some(c=>c.level==='high')?'high':captures.some(c=>c.level==='med')?'med':'low';
+      const group = document.createElement('div');
+      group.className = 'rsd-group';
+      group.innerHTML = `
+        <div class="rsd-header">
+          <div class="rsd-title">${DAY_SHORT[d.getDay()]}, ${fmtDate(d)}</div>
+          <div class="rsd-sub" style="color:${levelColor[maxLvl]}">${captures.length} cap · ${total} ins.</div>
+        </div>
+        <div class="rsd-body">
+          ${captures.map((c,i) => `
+            <div class="rsd-row" onclick="switchToDay('${date}',${i})">
+              <span class="mono">${c.time}</span>
+              <span style="color:${levelColor[c.level]};font-weight:700">${c.count} insetos</span>
+              <span class="mono" style="color:var(--text-muted);font-size:10px">${c.confidence}% IA</span>
+            </div>`).join('')}
+        </div>`;
+      group.querySelector('.rsd-header').addEventListener('click', function() {
+        const body = this.nextElementSibling;
+        body.classList.toggle('open');
+      });
+      list.appendChild(group);
+    });
+    container.appendChild(list);
+  } catch(e) {
+    showToast('Erro ao buscar período', 'error');
+  }
+}
+
+function switchToDay(key, capIdx) {
+  setMode('day');
+  selectedDay = key;
+  const d = new Date(key + 'T12:00:00');
+  calYear = d.getFullYear(); calMonth = d.getMonth();
+  loadCalendarMonth(calYear, calMonth);
+  loadDayCaptures(key).then(() => selectCapture(key, capIdx));
+  if (window.innerWidth <= 700) mobileTab('captures');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CAPTURES
+═══════════════════════════════════════════════════════════════ */
+async function loadDayCaptures(key) {
+  const date = new Date(key + 'T12:00:00');
+  const container = document.getElementById('captureListContainer');
+  container.innerHTML = `<div class="empty-state"><div class="spinner"></div></div>`;
+
+  const dh = document.getElementById('dayHeader');
+  dh.style.display = 'block';
+  document.getElementById('dayHeaderDate').textContent = `${DAY_NAMES[date.getDay()]}, ${fmtDate(date)}`;
+  document.getElementById('dayHeaderSub').textContent  = 'Carregando...';
+
+  try {
+    const caps = await API.getCapturesByDate('A-01', key);
+    activeDayCaptures = caps;
+    const total = caps.reduce((a,c) => a+c.count, 0);
+
+    document.getElementById('capturesTitle').textContent = 'Capturas do Dia';
+    document.getElementById('capturesBadge').textContent = caps.length ? `${caps.length} captura${caps.length>1?'s':''}` : 'Sem dados';
+    document.getElementById('capturesBadge').className   = 'badge ' + (caps.length>=5?'br':caps.length>=3?'ba':'bg');
+    document.getElementById('dayHeaderSub').textContent  = caps.length
+      ? `${total} Spodoptera detectadas · ${caps.length} capturas`
+      : 'Nenhuma captura registrada neste dia';
+
+    container.innerHTML = '';
+
+    if (!caps.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3L14.5 4z"/><circle cx="12" cy="13" r="3"/></svg></div><div class="empty-text">Sem capturas<br>neste dia</div></div>`;
+      return;
+    }
+
+    const list = document.createElement('div');
+    list.className = 'capture-list';
+    caps.forEach((cap, i) => {
+      const item = document.createElement('div');
+      item.className = 'capture-item';
+      item.style.animation = `slideR .25s ease ${i*.07}s both`;
+      item.innerHTML = `
+        <div class="cap-thumb">
+          <div class="cap-thumb-num ${cap.level}">${cap.count}</div>
+        </div>
+        <div class="cap-body">
+          <div class="cap-time">A-01 · ${key} · ${cap.time}</div>
+          <div class="cap-title">Captura ${i+1} — ${cap.time}</div>
+          <div class="cap-chips">
+            <span class="cap-chip" style="${chipStyle(cap.level)}">${levelLabel[cap.level]}</span>
+            <span class="cap-chip" style="color:var(--blue);border-color:rgba(96,165,250,.3);background:var(--blue-dim)">${cap.confidence}% IA</span>
+          </div>
+        </div>`;
+      item.addEventListener('click', () => {
+        selectCapture(key, i);
+        if (window.innerWidth <= 700) mobileTab('viewer');
+      });
+      list.appendChild(item);
+    });
+    container.appendChild(list);
+
+    // Auto-select first
+    selectCapture(key, 0);
+  } catch(e) {
+    showToast('Erro ao carregar capturas', 'error');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CAPTURE SELECTION & VIEWER
+═══════════════════════════════════════════════════════════════ */
+function selectCapture(dayKey, idx) {
+  if (!activeDayCaptures.length) return;
+  activeDayKey   = dayKey;
+  activeDayIndex = idx;
+  activeCapture  = activeDayCaptures[idx];
+
+  document.querySelectorAll('.capture-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+  renderViewer(dayKey, activeCapture, activeDayCaptures, idx);
+}
+
+function navigateCapture(dir) {
+  const newIdx = activeDayIndex + dir;
+  if (newIdx < 0 || newIdx >= activeDayCaptures.length) return;
+  selectCapture(activeDayKey, newIdx);
+}
+
+function renderViewer(dayKey, cap, allCaps, idx) {
+  document.getElementById('imgBadges').style.display = 'flex';
+  document.getElementById('ibCount').textContent = `${cap.count} inseto${cap.count>1?'s':''}`;
+  document.getElementById('ibConf').textContent  = `${cap.confidence}% confiança`;
+  document.getElementById('imgEmpty').style.display = 'none';
+
+  // Bounding boxes
+  // API HOOK: substituir por cap.boundingBoxes quando vier da API real
+  const dots = document.getElementById('imgDots');
+  dots.innerHTML = '';
+  const boxes = cap.boundingBoxes && cap.boundingBoxes.length
+    ? cap.boundingBoxes
+    : shuffle(Array.from({length:15},()=>({x:Math.floor(Math.random()*76)+8,y:Math.floor(Math.random()*72)+8}))).slice(0,Math.min(cap.count,10));
+
+  boxes.forEach((b, i) => {
+    const el = document.createElement('div');
+    el.className = 'insect-dot';
+    el.style.left = b.x + '%';
+    el.style.top  = b.y + '%';
+    el.style.animationDelay = `.12s`;
+    el.innerHTML  = '<div class="insect-dot-box"></div>';
+    dots.appendChild(el);
+  });
+
+  // API HOOK: exibir imagem real quando imageUrl estiver disponível
+  // if (cap.imageUrl) {
+  //   const imgEl = document.getElementById('realImage') || (() => {
+  //     const img = document.createElement('img');
+  //     img.id = 'realImage';
+  //     img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0';
+  //     document.getElementById('imgFrame').appendChild(img);
+  //     return img;
+  //   })();
+  //   imgEl.src = cap.imageUrl;
+  // }
+
+  const date = new Date(dayKey + 'T12:00:00');
+  document.getElementById('metaDate').textContent  = fmtDate(date);
+  document.getElementById('metaTime').textContent  = cap.time;
+  document.getElementById('metaLevel').textContent = levelLabel[cap.level];
+  document.getElementById('metaLevel').style.color = levelColor[cap.level];
+  document.getElementById('metaCount').textContent = cap.count;
+  document.getElementById('metaCount').style.color = levelColor[cap.level];
+  document.getElementById('imgMeta').style.opacity = '1';
+
+  document.getElementById('btnPrev').disabled = idx === 0;
+  document.getElementById('btnNext').disabled = idx === allCaps.length - 1;
+  document.getElementById('imgNav').style.opacity = '1';
+
+  const strip = document.getElementById('thumbStrip');
+  strip.innerHTML = '';
+  allCaps.forEach((c, i) => {
+    const t = document.createElement('div');
+    t.className = `img-thumb${i===idx?' active':''}`;
+    t.innerHTML = `<div class="img-thumb-bg"></div><div class="img-thumb-cnt ${c.level}">${c.count}</div><div class="img-thumb-t">${c.time}</div>`;
+    t.addEventListener('click', () => selectCapture(dayKey, i));
+    strip.appendChild(t);
+  });
+
+  // Modal data
+  document.getElementById('modalTitle').textContent  = `A-01 · ${fmtDate(date)} às ${cap.time}`;
+  document.getElementById('modalCount').textContent  = `${cap.count} detectado${cap.count>1?'s':''}`;
+  document.getElementById('modalConf').textContent   = `${cap.confidence}%`;
+}
+
+function clearViewer() {
+  activeCapture = null;
+  document.getElementById('imgBadges').style.display = 'none';
+  document.getElementById('imgDots').innerHTML = '';
+  document.getElementById('imgEmpty').style.display = 'flex';
+  document.getElementById('imgMeta').style.opacity = '.3';
+  document.getElementById('imgNav').style.opacity  = '.3';
+  document.getElementById('thumbStrip').innerHTML  = '';
+  document.getElementById('btnPrev').disabled = true;
+  document.getElementById('btnNext').disabled = true;
+  ['metaDate','metaTime','metaCount'].forEach(id => document.getElementById(id).textContent = '—');
+  document.getElementById('metaLevel').textContent = '—';
+  document.getElementById('metaLevel').style.color = '';
+  document.getElementById('metaCount').style.color = '';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════════════════════════ */
+function openModal() {
+  if (!activeCapture) return;
+  document.getElementById('imgModal').classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+function handleModalClick(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal('imgModal');
+    closeModal('logoutModal');
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   LOGOUT
+═══════════════════════════════════════════════════════════════ */
+function confirmLogout() {
+  document.getElementById('logoutModal').classList.add('open');
+}
+async function doLogout() {
+  try {
+    closeModal('logoutModal');
+    showToast('Saindo...', 'info', 1500);
+    await API.logout();
+    // API HOOK: redirecionar para login real
+    // window.location.href = '/login';
+    setTimeout(() => showToast('Redirecionando para o login...', 'info', 2000), 600);
+  } catch(e) {
+    showToast('Erro ao fazer logout', 'error');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   VERIFICAÇÃO DE AUTENTICAÇÃO
+   Chamada antes de tudo no init(). Se não tiver token válido,
+   redireciona para o login.
+═══════════════════════════════════════════════════════════════ */
+async function verificarAuth() {
+  const token = localStorage.getItem('agrosentinel_token')
+             || sessionStorage.getItem('agrosentinel_token');
+
+  if (!token) {
+    window.location.href = 'login.html';
+    return false;
+  }
+
+  try {
+    const res = await fetch(`${API.BASE_URL}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+
+    if (res.status === 401) {
+      // Token expirado ou inválido — limpa e vai para login
+      localStorage.removeItem('agrosentinel_token');
+      localStorage.removeItem('agrosentinel_user');
+      sessionStorage.removeItem('agrosentinel_token');
+      sessionStorage.removeItem('agrosentinel_user');
+      window.location.href = 'login.html';
+      return false;
+    }
+
+    if (res.ok) {
+      const { user } = await res.json();
+      // Exibe nome do usuário logado no header
+      const clockEl = document.getElementById('clock');
+      if (clockEl && user) {
+        const perfilBadge = user.perfil === 'admin'
+          ? '<span style="font-size:8px;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);border-radius:3px;padding:1px 5px;color:var(--green);margin-left:6px;letter-spacing:.5px">ADMIN</span>'
+          : '<span style="font-size:8px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.25);border-radius:3px;padding:1px 5px;color:var(--blue);margin-left:6px;letter-spacing:.5px">OPER.</span>';
+        clockEl.insertAdjacentHTML('beforebegin',
+          `<div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);display:flex;align-items:center;">${user.nome.split(' ')[0]}${perfilBadge}</div>`
+        );
+      }
+    }
+    // Se a API estiver fora do ar (ex: Render dormindo), permite acesso
+    return true;
+
+  } catch {
+    // Sem conexão com a API — permite acesso com dados mock
+    return true;
+  }
+}
+
+(async function init() {
+  // Verifica autenticação antes de carregar qualquer dado
+  const autenticado = await verificarAuth();
+  if (!autenticado) return;
+
+  // Mobile: show only calendar panel initially
+  if (window.innerWidth <= 700) mobileTab('calendar');
+
+  await loadTrapInfo();
+  await loadCalendarMonth(calYear, calMonth);
+  await loadDayCaptures(dateKey(TODAY));
+})();
+</script>
+</body>
+</html>

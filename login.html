@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>AgroSentinel — Acesso ao Sistema</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════
+   TEMA ESCURO (padrão)
+════════════════════════════════════════ */
+:root,
+[data-theme="dark"] {
+  --bg:           #0a0f0a;
+  --surface:      #111a11;
+  --surface2:     #162016;
+  --border:       #1e2e1e;
+  --border-soft:  #253525;
+  --green:        #4ade80;
+  --green-dim:    #1a4025;
+  --green-glow:   rgba(74,222,128,0.12);
+  --amber:        #f59e0b;
+  --amber-dim:    #3a2a05;
+  --red:          #f87171;
+  --red-dim:      #3a1010;
+  --blue:         #60a5fa;
+  --text:         #e2eed4;
+  --text-muted:   #6b7e5a;
+  --text-dim:     #3d4f32;
+  --text-invert:  #0a0f0a;
+  --grid-color:   rgba(74,222,128,0.025);
+  --scan-color:   rgba(74,222,128,0.18);
+  --glow-color:   rgba(74,222,128,0.06);
+  --shadow:       0 8px 32px rgba(0,0,0,0.4);
+  --shadow-sm:    0 2px 8px rgba(0,0,0,0.3);
+  --divider-grad: rgba(74,222,128,0.35);
+}
+
+/* ════════════════════════════════════════
+   TEMA CLARO
+════════════════════════════════════════ */
+[data-theme="light"] {
+  --bg:           #f0f4f0;
+  --surface:      #ffffff;
+  --surface2:     #f4f7f4;
+  --border:       #d4e0d4;
+  --border-soft:  #e2ede2;
+  --green:        #16a34a;
+  --green-dim:    #dcfce7;
+  --green-glow:   rgba(22,163,74,0.08);
+  --amber:        #d97706;
+  --amber-dim:    #fef3c7;
+  --red:          #dc2626;
+  --red-dim:      #fee2e2;
+  --blue:         #2563eb;
+  --text:         #1a2e1a;
+  --text-muted:   #4a6b4a;
+  --text-dim:     #8aab8a;
+  --text-invert:  #ffffff;
+  --grid-color:   rgba(22,163,74,0.04);
+  --scan-color:   rgba(22,163,74,0.1);
+  --glow-color:   rgba(22,163,74,0.06);
+  --shadow:       0 8px 32px rgba(0,0,0,0.08);
+  --shadow-sm:    0 2px 8px rgba(0,0,0,0.06);
+  --divider-grad: rgba(22,163,74,0.4);
+}
+
+/* ════════════════════════════════════════
+   BASE
+════════════════════════════════════════ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { height:100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100dvh;
+  display: flex;
+  overflow: hidden;
+  transition: background .3s, color .3s;
+}
+
+body::before {
+  content:'';
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size:32px 32px;
+}
+
+/* ════════════════════════════════════════
+   BOTÃO DE TEMA — flutuante
+════════════════════════════════════════ */
+.theme-toggle {
+  position: fixed;
+  top: 18px; right: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  padding: 6px 12px 6px 8px;
+  cursor: pointer;
+  transition: all .2s;
+  box-shadow: var(--shadow-sm);
+  -webkit-tap-highlight-color: transparent;
+}
+.theme-toggle:hover {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-glow);
+}
+
+.theme-toggle-track {
+  width: 36px; height: 20px;
+  background: var(--border);
+  border-radius: 10px;
+  position: relative;
+  transition: background .3s;
+  flex-shrink: 0;
+}
+[data-theme="dark"] .theme-toggle-track  { background: var(--green-dim); }
+[data-theme="light"] .theme-toggle-track { background: var(--green-dim); }
+
+.theme-toggle-thumb {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px; left: 3px;
+  transition: all .25s cubic-bezier(.4,0,.2,1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px;
+}
+[data-theme="dark"]  .theme-toggle-thumb { background: var(--green); transform: translateX(0); }
+[data-theme="light"] .theme-toggle-thumb { background: var(--green); transform: translateX(16px); }
+
+.theme-toggle-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: .5px;
+  white-space: nowrap;
+}
+
+/* ════════════════════════════════════════
+   PAINEL ESQUERDO
+════════════════════════════════════════ */
+.left-panel {
+  position: relative;
+  width: 52%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px 52px;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: background .3s;
+}
+
+.left-panel::after {
+  content:'';
+  position:absolute; top:0; right:0;
+  width:1px; height:100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--border) 15%,
+    var(--divider-grad) 50%,
+    var(--border) 85%,
+    transparent 100%
+  );
+}
+
+.left-bg-glow {
+  position:absolute;
+  width:600px; height:600px; border-radius:50%;
+  background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+  top:50%; left:40%; transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+
+.left-scan {
+  position:absolute; left:0; right:0; height:1px;
+  background: linear-gradient(90deg, transparent, var(--scan-color), transparent);
+  animation: scanV 8s linear infinite; pointer-events:none;
+}
+@keyframes scanV {
+  0%  { top:-1px; opacity:0; }
+  5%  { opacity:1; }
+  95% { opacity:1; }
+  100%{ top:100%; opacity:0; }
+}
+
+/* Logo */
+.brand-logo {
+  position:relative; z-index:1;
+  display:flex; align-items:center; gap:14px;
+  animation: fadeUp .5s ease both;
+}
+.brand-icon {
+  width:44px; height:44px;
+  background:var(--green-dim); border:1px solid var(--green);
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; color:var(--green);
+  transition: background .3s, border-color .3s;
+}
+.brand-name { font-size:22px; font-weight:800; letter-spacing:-.5px; }
+.brand-name span { color:var(--green); }
+.brand-tagline {
+  font-family:'JetBrains Mono', monospace;
+  font-size:9px; color:var(--text-muted);
+  letter-spacing:1.5px; text-transform:uppercase; margin-top:2px;
+}
+
+/* Hero */
+.brand-hero {
+  position:relative; z-index:1;
+  animation: fadeUp .5s ease .1s both;
+}
+
+.brand-eyebrow {
+  font-family:'JetBrains Mono', monospace;
+  font-size:10px; letter-spacing:2.5px; text-transform:uppercase;
+  color:var(--green); margin-bottom:20px;
+  display:flex; align-items:center; gap:10px;
+}
+.brand-eyebrow::before {
+  content:''; display:block; width:28px; height:1px; background:var(--green);
+}
+
+.brand-title {
+  font-size: clamp(26px, 3.2vw, 44px);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -.5px;
+  margin-bottom: 18px;
+  color: var(--text);
+}
+.brand-title em { font-style:italic; color:var(--green); font-size:94%; }
+
+.brand-desc {
+  font-size:14px; color:var(--text-muted);
+  line-height:1.75; max-width:380px; font-weight:400;
+}
+
+/* Stats */
+.brand-stats {
+  display:flex; margin-top:36px;
+  border:1px solid var(--border); border-radius:10px;
+  overflow:hidden; animation: fadeUp .5s ease .2s both;
+  transition: border-color .3s;
+}
+.bstat {
+  flex:1; padding:14px 16px;
+  border-right:1px solid var(--border); position:relative; overflow:hidden;
+  transition: border-color .3s;
+}
+.bstat:last-child { border-right:none; }
+.bstat::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+}
+.bstat:nth-child(1)::after { background:var(--green); }
+.bstat:nth-child(2)::after { background:var(--amber); }
+.bstat:nth-child(3)::after { background:var(--blue); }
+
+.bstat-val {
+  font-size:26px; font-weight:700; line-height:1;
+  font-family:'JetBrains Mono', monospace;
+}
+.bstat:nth-child(1) .bstat-val { color:var(--green); }
+.bstat:nth-child(2) .bstat-val { color:var(--amber); }
+.bstat:nth-child(3) .bstat-val { color:var(--blue); }
+.bstat-lbl {
+  font-family:'JetBrains Mono', monospace; font-size:8px;
+  letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--text-muted); margin-top:5px;
+}
+
+/* Features */
+.feature-list {
+  display:flex; flex-direction:column; gap:11px;
+  margin-top:30px; animation: fadeUp .5s ease .28s both;
+}
+.feature-item {
+  display:flex; align-items:center; gap:12px;
+  font-size:13px; color:var(--text-muted); font-weight:400;
+}
+.feature-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--green); flex-shrink:0;
+  box-shadow:0 0 6px var(--green);
+}
+
+/* Footer */
+.brand-footer {
+  position:relative; z-index:1;
+  display:flex; align-items:center; justify-content:space-between;
+  animation: fadeUp .5s ease .35s both;
+}
+.brand-footer-txt {
+  font-family:'JetBrains Mono', monospace; font-size:9px;
+  color:var(--text-dim); letter-spacing:.5px;
+}
+.live-indicator {
+  display:flex; align-items:center; gap:6px;
+  font-family:'JetBrains Mono', monospace; font-size:9px;
+  color:var(--green); background:var(--green-dim);
+  border:1px solid rgba(74,222,128,.3);
+  padding:4px 10px; border-radius:20px;
+  transition: background .3s;
+}
+.live-dot-sm {
+  width:5px; height:5px; border-radius:50%;
+  background:var(--green); animation:pulse 2s infinite;
+}
+
+/* ════════════════════════════════════════
+   PAINEL DIREITO — FORMULÁRIO
+════════════════════════════════════════ */
+.right-panel {
+  flex:1;
+  display:flex; align-items:center; justify-content:center;
+  padding:60px 40px;
+  position:relative; z-index:1;
+}
+
+.form-card {
+  width:100%; max-width:400px;
+  animation: fadeUp .5s ease .08s both;
+}
+
+.form-header { margin-bottom:30px; }
+
+.form-section-lbl {
+  font-family:'JetBrains Mono', monospace; font-size:9px;
+  letter-spacing:2px; text-transform:uppercase;
+  color:var(--text-muted); margin-bottom:10px;
+  display:flex; align-items:center; gap:7px;
+}
+.form-section-lbl::before { content:'//'; color:var(--green); }
+
+.form-title {
+  font-size:28px; font-weight:800; letter-spacing:-.5px;
+  line-height:1.1; margin-bottom:7px; color:var(--text);
+}
+.form-subtitle { font-size:13px; color:var(--text-muted); line-height:1.65; font-weight:400; }
+
+/* Alerta de erro */
+.alert-error {
+  display:none; margin-bottom:18px;
+  background:var(--red-dim); border:1px solid rgba(220,38,38,.3);
+  border-radius:8px; padding:11px 14px;
+  font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--red);
+  animation:slideIn .25s ease;
+  align-items:center; gap:10px;
+  transition: background .3s;
+}
+.alert-error.show { display:flex; }
+
+/* Fields */
+.field-group { display:flex; flex-direction:column; gap:15px; margin-bottom:20px; }
+
+.field { display:flex; flex-direction:column; gap:6px; }
+
+.field-label {
+  font-family:'JetBrains Mono', monospace; font-size:10px;
+  letter-spacing:1px; text-transform:uppercase; color:var(--text-muted);
+  font-weight:500;
+}
+
+.field-wrap { position:relative; }
+
+.field-icon {
+  position:absolute; left:13px; top:50%;
+  transform:translateY(-50%);
+  font-size:14px; pointer-events:none; opacity:.5; color:var(--text);
+}
+
+.field-input {
+  width:100%;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px;
+  padding:12px 14px 12px 42px;
+  font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:400;
+  color:var(--text); outline:none;
+  transition:all .2s; color-scheme:dark;
+}
+[data-theme="light"] .field-input { color-scheme:light; }
+
+.field-input::placeholder { color:var(--text-dim); }
+.field-input:focus {
+  border-color:var(--green); background:var(--surface);
+  box-shadow:0 0 0 3px var(--green-glow);
+}
+.field-input.error {
+  border-color:var(--red); background:var(--red-dim);
+  box-shadow:0 0 0 3px rgba(220,38,38,.08);
+}
+
+.field-error {
+  font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--red);
+  display:none; padding:5px 9px;
+  background:var(--red-dim); border-radius:4px; border-left:2px solid var(--red);
+}
+.field-error.show { display:block; }
+
+.toggle-pass {
+  position:absolute; right:12px; top:50%; transform:translateY(-50%);
+  background:none; border:none; color:var(--text-muted);
+  cursor:pointer; font-size:14px; padding:3px;
+  transition:color .15s; -webkit-tap-highlight-color:transparent;
+}
+.toggle-pass:hover { color:var(--text); }
+
+/* Options */
+.options-row {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;
+}
+
+.checkbox-label {
+  display:flex; align-items:center; gap:8px;
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
+}
+.checkbox-input { display:none; }
+.checkbox-custom {
+  width:17px; height:17px; flex-shrink:0;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:4px; display:flex; align-items:center; justify-content:center;
+  transition:all .15s;
+}
+.checkbox-input:checked + .checkbox-custom {
+  background:var(--green-dim); border-color:var(--green);
+}
+.checkbox-input:checked + .checkbox-custom::after {
+  content:'✓'; font-size:11px; color:var(--green); font-weight:700;
+}
+.checkbox-text {
+  font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--text-muted);
+}
+
+.forgot-btn {
+  font-family:'JetBrains Mono', monospace; font-size:10px;
+  color:var(--text-muted); background:none; border:none;
+  cursor:pointer; padding:0; transition:color .15s;
+}
+.forgot-btn:hover { color:var(--green); }
+
+/* Botão principal */
+.btn-login {
+  width:100%; padding:14px;
+  background:var(--green-dim); border:1px solid var(--green);
+  border-radius:9px; color:var(--green);
+  font-family:'JetBrains Mono', monospace; font-size:12px;
+  letter-spacing:2px; font-weight:700;
+  cursor:pointer; transition:all .2s;
+  position:relative; overflow:hidden;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+}
+.btn-login::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg, transparent, rgba(74,222,128,.1), transparent);
+  transform:translateX(-100%); transition:transform .5s;
+}
+[data-theme="light"] .btn-login::before {
+  background:linear-gradient(90deg, transparent, rgba(22,163,74,.1), transparent);
+}
+.btn-login:hover:not(:disabled)::before { transform:translateX(100%); }
+.btn-login:hover:not(:disabled) {
+  background:var(--green); color:var(--text-invert);
+  box-shadow:0 4px 20px var(--green-glow);
+}
+.btn-login:active:not(:disabled) { transform:scale(.99); }
+.btn-login:disabled { opacity:.5; cursor:not-allowed; }
+
+.btn-spinner {
+  width:15px; height:15px; border-radius:50%;
+  border:2px solid rgba(74,222,128,.3); border-top-color:var(--green);
+  animation:spin .7s linear infinite; display:none; flex-shrink:0;
+}
+.btn-login.loading .btn-spinner { display:block; }
+.btn-login.loading .btn-text { display:none; }
+.btn-login.loading .btn-icon { display:none; }
+
+.form-divider {
+  display:flex; align-items:center; gap:10px; margin:20px 0;
+}
+.form-divider::before, .form-divider::after {
+  content:''; flex:1; height:1px; background:var(--border);
+}
+.form-divider-txt {
+  font-family:'JetBrains Mono', monospace; font-size:9px;
+  color:var(--text-dim); letter-spacing:.5px; white-space:nowrap;
+}
+
+.form-footer {
+  text-align:center;
+  font-family:'JetBrains Mono', monospace; font-size:9px;
+  color:var(--text-dim); line-height:1.9; letter-spacing:.3px;
+}
+
+/* ════════════════════════════════════════
+   MODAL — ESQUECI A SENHA
+════════════════════════════════════════ */
+.modal-overlay {
+  display:none; position:fixed; inset:0; z-index:200;
+  background:rgba(0,0,0,.7); backdrop-filter:blur(8px);
+  align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.open { display:flex; }
+
+.modal-box {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:28px;
+  max-width:360px; width:100%;
+  animation:fadeUp .25s ease;
+  box-shadow:var(--shadow);
+  transition: background .3s, border-color .3s;
+}
+.modal-head {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;
+}
+.modal-title { font-size:16px; font-weight:700; }
+.modal-close {
+  background:none; border:none; color:var(--text-muted);
+  font-size:18px; cursor:pointer; line-height:1; padding:4px;
+  transition:color .15s;
+}
+.modal-close:hover { color:var(--text); }
+.modal-desc { font-size:13px; color:var(--text-muted); line-height:1.7; margin-bottom:18px; }
+.modal-lbl {
+  font-family:'JetBrains Mono', monospace; font-size:9px;
+  letter-spacing:1.5px; text-transform:uppercase; color:var(--text-muted);
+  display:block; margin-bottom:6px;
+}
+.modal-input {
+  width:100%; background:var(--surface2); border:1px solid var(--border);
+  border-radius:7px; padding:11px 13px; margin-bottom:14px;
+  font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text);
+  outline:none; transition:border-color .15s; color-scheme:dark;
+}
+[data-theme="light"] .modal-input { color-scheme:light; }
+.modal-input:focus { border-color:var(--green); }
+
+.modal-btn {
+  width:100%; padding:11px;
+  background:var(--green-dim); border:1px solid var(--green);
+  border-radius:7px; color:var(--green);
+  font-family:'JetBrains Mono', monospace; font-size:11px;
+  letter-spacing:1.5px; font-weight:700; cursor:pointer; transition:all .2s;
+}
+.modal-btn:hover { background:var(--green); color:var(--text-invert); }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:10px 20px;
+  font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:500;
+  z-index:300; white-space:nowrap; pointer-events:none;
+  animation:toastIn .3s ease; box-shadow:var(--shadow);
+}
+.toast.success { border-color:var(--green); color:var(--green); }
+.toast.info    { border-color:var(--blue);  color:var(--blue); }
+
+/* ════════════════════════════════════════
+   ANIMAÇÕES
+════════════════════════════════════════ */
+@keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:.3} }
+@keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideIn { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
+@keyframes spin    { to{transform:rotate(360deg)} }
+@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+@keyframes shake   { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+
+/* ════════════════════════════════════════
+   RESPONSIVO — TABLET
+════════════════════════════════════════ */
+@media(max-width:900px) {
+  body { flex-direction:column; overflow:auto; }
+  .left-panel {
+    width:100%; min-height:auto; padding:32px 28px;
+  }
+  .left-panel::after { display:none; }
+  .left-panel::before {
+    content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
+    background:linear-gradient(to right, transparent, var(--border) 15%, var(--divider-grad) 50%, var(--border) 85%, transparent);
+  }
+  .brand-title { font-size:26px; }
+  .feature-list { display:none; }
+  .brand-stats  { margin-top:20px; }
+  .right-panel  { padding:32px 28px 48px; }
+  .theme-toggle { top:16px; right:16px; }
+}
+
+@media(max-width:540px) {
+  .left-panel { padding:20px 18px 24px; }
+  .brand-hero, .brand-stats, .brand-footer { display:none; }
+  .right-panel { padding:20px 18px 40px; }
+  .form-title  { font-size:24px; }
+  .theme-toggle { padding:5px 10px 5px 7px; }
+}
+
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+</style>
+</head>
+<body>
+
+<!-- BOTÃO DE TEMA -->
+<button class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema">
+  <div class="theme-toggle-track">
+    <div class="theme-toggle-thumb" id="themeThumb"></div>
+  </div>
+  <span class="theme-toggle-label" id="themeLabel">CLARO</span>
+</button>
+
+<!-- ══════════════════════════════════════
+     PAINEL ESQUERDO
+══════════════════════════════════════ -->
+<div class="left-panel">
+  <div class="left-bg-glow"></div>
+  <div class="left-scan"></div>
+
+  <div class="brand-logo">
+    <div class="brand-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 1 1.1 4.8 4 4 0 0 1-1.3 2.9c-1 .8-2.1 1.2-3.3 1.3-.2-1.7.4-3.5 1.3-5"/></svg></div>
+    <div>
+      <div class="brand-name">SPY<span>TRAP</span></div>
+      <div class="brand-tagline">Sistema de monitoramento de pragas</div>
+    </div>
+  </div>
+
+  <div class="brand-hero">
+    <div class="brand-eyebrow">Monitoramento Inteligente</div>
+    <h1 class="brand-title">
+      Detecção em tempo<br>real de <em>Spodoptera<br>frugiperda</em>
+    </h1>
+    <p class="brand-desc">
+      Armadilhas IoT combinadas com visão computacional para identificar e quantificar infestações de lagarta-do-cartucho antes que causem danos à lavoura.
+    </p>
+
+    <div class="brand-stats">
+      <div class="bstat">
+        <div class="bstat-val">98%</div>
+        <div class="bstat-lbl">Precisão IA</div>
+      </div>
+      <div class="bstat">
+        <div class="bstat-val">3–5</div>
+        <div class="bstat-lbl">Capturas/dia</div>
+      </div>
+      <div class="bstat">
+        <div class="bstat-val">24h</div>
+        <div class="bstat-lbl">Histórico</div>
+      </div>
+    </div>
+
+    <div class="feature-list">
+      <div class="feature-item"><div class="feature-dot"></div>Identificação automática por visão computacional</div>
+      <div class="feature-item"><div class="feature-dot"></div>Alertas por nível de infestação (baixa, média, alta)</div>
+      <div class="feature-item"><div class="feature-dot"></div>Histórico com navegação por data e período</div>
+      <div class="feature-item"><div class="feature-dot"></div>Localização GPS da armadilha em campo</div>
+    </div>
+  </div>
+
+  <div class="brand-footer">
+    <div class="brand-footer-txt">© 2026 SPYTRAP · Projeto Universitário</div>
+    <div class="live-indicator">
+      <div class="live-dot-sm"></div>
+      SISTEMA ATIVO
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAINEL DIREITO — FORMULÁRIO
+══════════════════════════════════════ -->
+<div class="right-panel">
+  <div class="form-card">
+
+    <div class="form-header">
+      <div class="form-section-lbl">acesso ao sistema</div>
+      <h2 class="form-title">Entrar</h2>
+      <p class="form-subtitle">Insira suas credenciais para acessar o painel de monitoramento.</p>
+    </div>
+
+    <div class="alert-error" id="alertError">
+      <span style="display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+      <span id="alertMsg">Usuário ou senha incorretos.</span>
+    </div>
+
+    <form id="loginForm" onsubmit="handleLogin(event)" novalidate>
+      <div class="field-group">
+
+        <div class="field">
+          <div class="field-label">Usuário</div>
+          <div class="field-wrap">
+            <span class="field-icon" style="display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <input type="text" id="fUser" class="field-input"
+              placeholder="usuario@email.com"
+              autocomplete="username" autocapitalize="none" spellcheck="false">
+          </div>
+          <div class="field-error" id="errUser">Informe seu usuário ou e-mail.</div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Senha</div>
+          <div class="field-wrap">
+            <span class="field-icon" style="display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+            <input type="password" id="fPass" class="field-input"
+              placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="toggle-pass" id="togglePass" onclick="togglePw()" style="display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+          <div class="field-error" id="errPass">Informe sua senha.</div>
+        </div>
+
+      </div>
+
+      <div class="options-row">
+        <label class="checkbox-label">
+          <input type="checkbox" class="checkbox-input" id="remember">
+          <div class="checkbox-custom"></div>
+          <span class="checkbox-text">Manter conectado</span>
+        </label>
+        <button type="button" class="forgot-btn" onclick="openForgot()">Esqueci a senha</button>
+      </div>
+
+      <button type="submit" class="btn-login" id="btnLogin">
+        <span class="btn-icon" style="display:flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg></span>
+        <span class="btn-text">ACESSAR O SISTEMA</span>
+        <div class="btn-spinner"></div>
+      </button>
+    </form>
+
+    <div class="form-divider">
+      <span class="form-divider-txt">// informações</span>
+    </div>
+
+    <div class="form-footer">
+      Acesso restrito a membros autorizados da equipe.<br>
+      Em caso de problemas, contate o administrador.
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL ESQUECI A SENHA -->
+<div class="modal-overlay" id="forgotModal" onclick="bgClick(event)">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title">Recuperar acesso</div>
+      <button class="modal-close" onclick="closeForgot()">✕</button>
+    </div>
+    <p class="modal-desc">Informe seu e-mail cadastrado. Enviaremos as instruções para redefinição de senha.</p>
+    <label class="modal-lbl">E-mail</label>
+    <input type="email" class="modal-input" id="forgotEmail" placeholder="seu@email.com">
+    <button class="modal-btn" onclick="sendForgot()">ENVIAR INSTRUÇÕES</button>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   TEMA
+══════════════════════════════════════ */
+const THEME_KEY = 'agrosentinel_theme';
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeLabel').textContent = theme === 'dark' ? 'ESCURO' : 'CLARO';
+  localStorage.setItem(THEME_KEY, theme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+// Restaura tema salvo
+(function() {
+  const saved = localStorage.getItem(THEME_KEY) || 'light';
+  applyTheme(saved);
+})();
+
+/* ══════════════════════════════════════
+   API HOOK — Autenticação
+══════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════
+   CONFIGURAÇÃO DA API
+   Altere BASE_URL para o endereço do seu backend no Render.
+   Ex: 'https://agrosentinel-api.onrender.com'
+══════════════════════════════════════════════════════ */
+const API_BASE_URL = 'http://localhost:3000';
+
+const AUTH = {
+
+  async login(email, password, remember) {
+    const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, password, remember }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Erro ao fazer login.');
+    return data; // { token, user: { id, nome, email, perfil } }
+  },
+
+  async forgotPassword(email) {
+    const res = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email }),
+    });
+    if (!res.ok) throw new Error('Erro ao enviar. Tente novamente.');
+    return res.json();
+  },
+
+  saveSession(token, user, remember) {
+    const storage = remember ? localStorage : sessionStorage;
+    storage.setItem('agrosentinel_token', token);
+    storage.setItem('agrosentinel_user',  JSON.stringify(user));
+  },
+
+  redirect() {
+    window.location.href = 'index.html';
+  }
+};
+
+/* ══════════════════════════════════════
+   HELPERS
+══════════════════════════════════════ */
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function toast(msg, type = 'info', ms = 3200) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), ms);
+}
+
+let pwVisible = false;
+function togglePw() {
+  pwVisible = !pwVisible;
+  document.getElementById('fPass').type = pwVisible ? 'text' : 'password';
+  document.getElementById('togglePass').innerHTML = pwVisible ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+}
+
+/* ══════════════════════════════════════
+   FORM
+══════════════════════════════════════ */
+function clearErrors() {
+  ['fUser','fPass'].forEach(id => document.getElementById(id).classList.remove('error'));
+  ['errUser','errPass'].forEach(id => document.getElementById(id).classList.remove('show'));
+  document.getElementById('alertError').classList.remove('show');
+}
+
+function validate() {
+  let ok = true;
+  if (!document.getElementById('fUser').value.trim()) {
+    document.getElementById('fUser').classList.add('error');
+    document.getElementById('errUser').classList.add('show');
+    ok = false;
+  }
+  if (!document.getElementById('fPass').value) {
+    document.getElementById('fPass').classList.add('error');
+    document.getElementById('errPass').classList.add('show');
+    ok = false;
+  }
+  return ok;
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  clearErrors();
+  if (!validate()) return;
+
+  const user = document.getElementById('fUser').value.trim();
+  const pass = document.getElementById('fPass').value;
+  const rem  = document.getElementById('remember').checked;
+  const btn  = document.getElementById('btnLogin');
+
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  try {
+    const { token, user: userData } = await AUTH.login(user, pass, rem);
+    AUTH.saveSession(token, userData, rem);
+    toast('✓ Acesso autorizado — redirecionando...', 'success', 2200);
+    await delay(900);
+    AUTH.redirect();
+  } catch (err) {
+    const alertEl = document.getElementById('alertError');
+    document.getElementById('alertMsg').textContent =
+      err.message === 'Credenciais inválidas'
+        ? 'Usuário ou senha incorretos. Verifique e tente novamente.'
+        : err.message || 'Erro inesperado. Tente novamente.';
+    alertEl.classList.add('show');
+    ['fUser','fPass'].forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.add('error');
+      el.style.animation = 'shake .4s ease';
+      setTimeout(() => { el.style.animation = ''; }, 420);
+    });
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+['fUser','fPass'].forEach(id => {
+  document.getElementById(id).addEventListener('input', clearErrors);
+});
+
+/* ══════════════════════════════════════
+   MODAL
+══════════════════════════════════════ */
+function openForgot() {
+  document.getElementById('forgotModal').classList.add('open');
+  setTimeout(() => document.getElementById('forgotEmail').focus(), 150);
+}
+function closeForgot() {
+  document.getElementById('forgotModal').classList.remove('open');
+}
+function bgClick(e) {
+  if (e.target === document.getElementById('forgotModal')) closeForgot();
+}
+
+async function sendForgot() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  if (!email || !email.includes('@')) { document.getElementById('forgotEmail').focus(); return; }
+
+  const btn = document.querySelector('.modal-btn');
+  const orig = btn.textContent;
+  btn.textContent = 'ENVIANDO...'; btn.disabled = true;
+
+  try {
+    await AUTH.forgotPassword(email);
+    closeForgot();
+    toast('✓ Instruções enviadas para ' + email, 'success', 4000);
+    document.getElementById('forgotEmail').value = '';
+  } catch {
+    toast('Erro ao enviar. Verifique o e-mail informado.', 'info');
+  } finally {
+    btn.textContent = orig; btn.disabled = false;
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeForgot(); });
+</script>
+</body>
+</html>
