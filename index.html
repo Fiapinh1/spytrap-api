@@ -753,6 +753,10 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
 @media(max-width:700px) {
   :root { --header-h:52px; }
 
+  .trap-selector-name { font-size:13px; }
+  .trap-dropdown { min-width:190px; }
+
+
   .header { padding:0 14px; }
   .logo-sub { display:none; }
   .clock-badge { display:none; }
@@ -804,70 +808,32 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
   .tstat-lbl { font-size:7px; }
 }
 
-/* ── LEAFLET MAP ── */
+/* ── LEAFLET MAP PANEL ── */
 .map-panel-tabs {
-  display:flex; gap:4px; margin-bottom:12px; flex-shrink:0;
+  display:flex; gap:4px; margin-bottom:10px; flex-shrink:0;
 }
 .mpt {
   flex:1; padding:6px 4px; text-align:center;
   background:var(--surface2); border:1px solid var(--border);
   border-radius:var(--radius-sm); color:var(--text-muted);
   font-family:var(--font-mono); font-size:9px; letter-spacing:1px;
-  cursor:pointer; transition:all .15s; font-weight:500;
+  cursor:pointer; transition:all .15s;
 }
-.mpt.active {
-  background:var(--green-dim); border-color:rgba(74,222,128,.4); color:var(--green);
-}
-.map-container {
-  display:none; flex:1; min-height:260px;
-  border-radius:var(--radius-sm); overflow:hidden;
-  border:1px solid var(--border); position:relative;
-}
+.mpt.active { background:var(--green-dim); border-color:rgba(74,222,128,.4); color:var(--green); }
+.map-container { display:none; flex:1; min-height:260px; border-radius:var(--radius-sm); overflow:hidden; border:1px solid var(--border); }
 .map-container.visible { display:block; }
-
-/* Leaflet popup → design system */
-.leaflet-popup-content-wrapper {
-  background:var(--surface) !important;
-  color:var(--text) !important;
-  border:1px solid var(--border) !important;
-  border-radius:var(--radius-md) !important;
-  box-shadow:0 4px 20px rgba(0,0,0,.25) !important;
-  font-family:var(--font-ui) !important;
-  font-size:12px !important;
-  padding:0 !important;
-}
-.leaflet-popup-content {
-  margin:0 !important; padding:10px 14px !important;
-  line-height:1.6 !important;
-}
-.leaflet-popup-tip { background:var(--surface) !important; }
-.leaflet-popup-close-button {
-  color:var(--text-muted) !important;
-  font-size:16px !important; top:4px !important; right:6px !important;
-}
-.leaflet-control-zoom a {
-  background:var(--surface) !important; color:var(--text) !important;
-  border-color:var(--border) !important;
-  font-family:var(--font-mono) !important;
-}
-.leaflet-control-zoom a:hover { background:var(--surface2) !important; color:var(--green) !important; }
-.leaflet-control-layers {
-  background:var(--surface) !important; border-color:var(--border) !important;
-  color:var(--text-muted) !important; font-family:var(--font-mono) !important; font-size:10px !important;
-}
-.leaflet-control-layers-selector { accent-color:var(--green); }
-/* Dark mode: suaviza o satélite */
+.leaflet-popup-content-wrapper { background:var(--surface)!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:var(--radius-md)!important; box-shadow:0 4px 20px rgba(0,0,0,.25)!important; font-family:var(--font-ui)!important; font-size:12px!important; padding:0!important; }
+.leaflet-popup-content { margin:0!important; padding:10px 14px!important; line-height:1.6!important; }
+.leaflet-popup-tip { background:var(--surface)!important; }
+.leaflet-popup-close-button { color:var(--text-muted)!important; }
+.leaflet-control-zoom a { background:var(--surface)!important; color:var(--text)!important; border-color:var(--border)!important; }
+.leaflet-control-zoom a:hover { background:var(--surface2)!important; color:var(--green)!important; }
+.leaflet-control-layers { background:var(--surface)!important; border-color:var(--border)!important; color:var(--text-muted)!important; font-family:var(--font-mono)!important; font-size:10px!important; }
 [data-theme="dark"] .leaflet-tile-pane { filter:brightness(.82) saturate(.85); }
 [data-theme="dark"] .leaflet-container { background:var(--surface2); }
-/* Coords clickable */
-.coords-link {
-  cursor:pointer; display:inline-flex; align-items:center; gap:5px;
-  transition:opacity .15s;
-}
+.coords-link { cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:opacity .15s; }
 .coords-link:hover { opacity:.75; }
-.coords-pin { flex-shrink:0; }
 </style>
-<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
@@ -910,11 +876,25 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
 <div class="trap-bar" id="trapBar">
   <div class="trap-bar-left">
     <div class="trap-online-dot" id="trapStatusDot"></div>
-    <div class="trap-name" id="trapName">Armadilha A-01</div>
+
+    <!-- Seletor de armadilha -->
+    <div class="trap-selector-wrap" id="trapSelectorWrap">
+      <button class="trap-selector-btn" onclick="toggleTrapDropdown()" id="trapSelectorBtn">
+        <div class="trap-selector-name" id="trapName">—</div>
+        <div class="trap-selector-chevron"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+      </button>
+      <div class="trap-dropdown" id="trapDropdown">
+        <div class="trap-dropdown-header">Armadilhas disponíveis</div>
+        <div id="trapOptionsList">
+          <!-- preenchido por renderTrapOptions() -->
+        </div>
+      </div>
+    </div>
+
     <div class="vdiv"></div>
     <div class="trap-field">
       <div class="label">Localização</div>
-      <div class="trap-field-val coords coords-link" id="trapCoords" onclick="showMapView()" title="Ver no mapa"><svg class="coords-pin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg><span id="trapCoordsText">—</span></div>
+      <div class="trap-field-val coords" id="trapCoords">—</div>
     </div>
     <div class="vdiv"></div>
     <div class="trap-field">
@@ -946,14 +926,10 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
 
   <!-- COL 1: CALENDAR + MAPA -->
   <div class="panel" id="panelCalendar" data-panel="calendar">
-
-    <!-- Aba CALENDÁRIO / MAPA -->
     <div class="map-panel-tabs">
       <div class="mpt active" id="mptCal" onclick="showCalView()">CALENDÁRIO</div>
       <div class="mpt"        id="mptMap" onclick="showMapView()">MAPA</div>
     </div>
-
-    <!-- ── Conteúdo do Calendário ── -->
     <div id="calContent">
     <div class="ph" style="margin-bottom:8px">
       <div class="pt" style="font-size:11px;color:var(--text-muted)">Modo de visualização</div>
@@ -994,12 +970,9 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
       <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--green)"></div>Baixa</div>
     </div>
     </div><!-- /calContent -->
-
-    <!-- ── Conteúdo do Mapa ── -->
     <div id="mapContent" class="map-container">
       <div id="trapMap" style="width:100%;height:100%;min-height:260px;"></div>
     </div>
-
   </div>
 
   <!-- COL 2: CAPTURE LIST -->
@@ -1137,24 +1110,33 @@ const API = {
   // ── MÉTODOS ─────────────────────────────────────────────────
 
   /**
-   * Dados gerais da armadilha (nome, coordenadas, status, stats do mês)
-   * API HOOK: GET /traps/{trapId}
-   * Retorno esperado: { id, name, lat, lng, status, lastCapture, monthTotal, peakDay, monthCaptures }
+   * Lista todas as armadilhas disponíveis para o usuário
+   * API HOOK: GET /traps
+   * Retorno esperado: Array<{ id, name, lat, lng, latDec, lngDec, status }>
    */
-  async getTrapInfo(trapId = 'A-01') {
-    // ── MOCK ── remova este bloco e descomente o fetch abaixo
+  async getTrapList() {
+    // ── MOCK ── remova e descomente o fetch abaixo
+    return MOCK_TRAPS;
+    // ── REAL ──
+    // const res = await fetch(`${this.BASE_URL}/traps`, { headers: this.getHeaders() });
+    // if (!res.ok) throw new Error('Falha ao buscar armadilhas');
+    // return res.json();
+  },
+
+  /**
+   * Dados gerais de uma armadilha específica
+   * API HOOK: GET /traps/{trapId}
+   * Retorno esperado: { id, name, lat, lng, latDec, lngDec, status, lastCapture, monthTotal, peakDay, monthCaptures }
+   */
+  async getTrapInfo(trapId) {
+    // ── MOCK ──
+    const trap = MOCK_TRAPS.find(t => t.id === trapId) || MOCK_TRAPS[0];
     return {
-      id: 'A-01',
-      name: 'SPYTRAP',
-      lat: "19°27'12\"S",
-      lng: "47°58'44\"W",
-      latDec: -19.4533,   // decimal para o mapa — virá da API real
-      lngDec: -47.9789,   // decimal para o mapa — virá da API real
-      status: 'online',
-      lastCapture: 'Hoje às 19:05',
-      monthTotal: 63,
-      peakDay: 18,
-      monthCaptures: 21,
+      ...trap,
+      lastCapture: 'Hoje às 19:00',
+      monthTotal:    Math.floor(Math.random() * 40) + 40,
+      peakDay:       Math.floor(Math.random() * 12) + 8,
+      monthCaptures: Math.floor(Math.random() * 10) + 18,
     };
     // ── REAL ──
     // const res = await fetch(`${this.BASE_URL}/traps/${trapId}`, { headers: this.getHeaders() });
@@ -1168,9 +1150,9 @@ const API = {
    * Retorno esperado: Array<{ id, time, count, level, confidence, imageUrl, boundingBoxes }>
    *   boundingBoxes: Array<{ x: %, y: % }> — coordenadas em % para overlay
    */
-  async getCapturesByDate(trapId = 'A-01', date) {
-    // ── MOCK ── remova este bloco e descomente o fetch abaixo
-    return MOCK_DATA[date] || [];
+  async getCapturesByDate(trapId, date) {
+    // ── MOCK ──
+    return getMockData(trapId)[date] || [];
     // ── REAL ──
     // const res = await fetch(`${this.BASE_URL}/traps/${trapId}/captures?date=${date}`, { headers: this.getHeaders() });
     // if (!res.ok) throw new Error('Falha ao buscar capturas');
@@ -1182,14 +1164,15 @@ const API = {
    * API HOOK: GET /traps/{trapId}/captures?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
    * Retorno esperado: Array<{ date: 'YYYY-MM-DD', captures: [...] }>
    */
-  async getCapturesByRange(trapId = 'A-01', startDate, endDate) {
+  async getCapturesByRange(trapId, startDate, endDate) {
     // ── MOCK ──
+    const mockData = getMockData(trapId);
     const results = [];
     const start = new Date(startDate + 'T12:00:00');
     const end   = new Date(endDate   + 'T12:00:00');
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const key = dateKey(d);
-      if (MOCK_DATA[key]) results.push({ date: key, captures: MOCK_DATA[key] });
+      if (mockData[key]) results.push({ date: key, captures: mockData[key] });
     }
     return results;
     // ── REAL ──
@@ -1203,15 +1186,16 @@ const API = {
    * API HOOK: GET /traps/{trapId}/calendar?year=YYYY&month=MM
    * Retorno esperado: Array<{ date: 'YYYY-MM-DD', count, maxLevel }>
    */
-  async getCalendarMonth(trapId = 'A-01', year, month) {
+  async getCalendarMonth(trapId, year, month) {
     // ── MOCK ──
+    const mockData = getMockData(trapId);
     const result = [];
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(year, month, d);
       const key  = dateKey(date);
-      if (MOCK_DATA[key]) {
-        const caps = MOCK_DATA[key];
+      if (mockData[key]) {
+        const caps = mockData[key];
         const maxLevel = caps.some(c => c.level==='high') ? 'high' : caps.some(c => c.level==='med') ? 'med' : 'low';
         result.push({ date: key, count: caps.length, maxLevel });
       }
@@ -1247,13 +1231,55 @@ const API = {
 };
 
 /* ═══════════════════════════════════════════════════════════════
-   DADOS MOCK — gerados automaticamente para os últimos 35 dias
+   MOCK — LISTA DE ARMADILHAS
+   API HOOK: remover quando usar API real (GET /traps)
+═══════════════════════════════════════════════════════════════ */
+const MOCK_TRAPS = [
+  {
+    id: 'SPY-01',
+    name: 'SPYTRAP 01',
+    lat: "19°27'12\"S", lng: "47°58'44\"W",
+    latDec: -19.4533, lngDec: -47.9789,
+    status: 'online',
+  },
+  {
+    id: 'SPY-02',
+    name: 'SPYTRAP 02',
+    lat: "19°28'05\"S", lng: "47°57'30\"W",
+    latDec: -19.4681, lngDec: -47.9583,
+    status: 'online',
+  },
+  {
+    id: 'SPY-03',
+    name: 'SPYTRAP 03',
+    lat: "19°26'50\"S", lng: "47°59'10\"W",
+    latDec: -19.4472, lngDec: -47.9861,
+    status: 'offline',
+  },
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   DADOS MOCK — gerados automaticamente por armadilha
    API HOOK: Este bloco inteiro pode ser removido quando usar API real
 ═══════════════════════════════════════════════════════════════ */
 const TODAY = new Date();
 TODAY.setHours(0,0,0,0);
 
-const MOCK_DATA = (() => {
+// Cache de dados por armadilha: { 'SPY-01': {...}, 'SPY-02': {...} }
+const MOCK_CACHE = {};
+
+function getMockData(trapId) {
+  if (MOCK_CACHE[trapId]) return MOCK_CACHE[trapId];
+  // Gera dados independentes para cada armadilha
+  const seed = trapId.charCodeAt(trapId.length - 1); // número do final do ID
+  MOCK_CACHE[trapId] = buildMockData(seed);
+  return MOCK_CACHE[trapId];
+}
+
+// Mantém compatibilidade: MOCK_DATA aponta para a armadilha ativa
+function getMockForActive() { return getMockData(activeTrapId); }
+
+function buildMockData(seed = 49) {
   const data = {};
   const hours = ['06:20','07:15','12:45','14:30','19:05'];
   const levelOf = n => n >= 8 ? 'high' : n >= 4 ? 'med' : 'low';
@@ -1327,6 +1353,8 @@ function showToast(msg, type='info', duration=2800) {
 /* ═══════════════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════════════ */
+let activeTrapId   = null;  // ID da armadilha selecionada
+let trapList       = [];    // lista de todas as armadilhas
 let viewMode = 'day';
 let calYear  = TODAY.getFullYear();
 let calMonth = TODAY.getMonth();
@@ -1405,28 +1433,41 @@ window.addEventListener('resize', syncMobilePanels);
 /* ═══════════════════════════════════════════════════════════════
    TRAP INFO
 ═══════════════════════════════════════════════════════════════ */
-async function loadTrapInfo() {
+async function loadTrapInfo(trapId) {
   try {
-    const info = await API.getTrapInfo();
+    const info = await API.getTrapInfo(trapId);
     document.getElementById('trapName').textContent       = info.name;
-    document.getElementById('trapCoordsText').textContent = `${info.lat}, ${info.lng}`;
-    // Inicializa mapa com coordenadas decimais da API
-    if (info.latDec !== undefined && info.lngDec !== undefined) {
-      initTrapMap(info.latDec, info.lngDec, info.name, info.lat, info.lng);
-    }
-    document.getElementById('trapLastCap').textContent  = info.lastCapture;
-    document.getElementById('sTotalMonth').textContent  = info.monthTotal;
-    document.getElementById('sPeakDay').textContent     = info.peakDay;
-    document.getElementById('sCaptures').textContent    = info.monthCaptures;
+    document.getElementById('trapLastCap').textContent    = info.lastCapture;
+    document.getElementById('sTotalMonth').textContent    = info.monthTotal;
+    document.getElementById('sPeakDay').textContent       = info.peakDay;
+    document.getElementById('sCaptures').textContent      = info.monthCaptures;
+
+    // Coordenadas (verifica se usa o elemento com span ou direto)
+    const coordEl = document.getElementById('trapCoordsText') || document.getElementById('trapCoords');
+    if (coordEl) coordEl.textContent = `${info.lat}, ${info.lng}`;
 
     const dot = document.getElementById('trapStatusDot');
     const statusEl = document.getElementById('trapStatus');
+    // Reset para online
+    dot.style.background = 'var(--green)';
+    dot.style.boxShadow  = '0 0 8px var(--green)';
+    statusEl.innerHTML   = '<span class="status-pill online">Online</span>';
+    statusEl.style.color = '';
+
     if (info.status !== 'online') {
       dot.style.background = 'var(--red)';
       dot.style.boxShadow  = '0 0 8px var(--red)';
-      statusEl.innerHTML = '<span class="status-pill offline">Offline</span>';
+      statusEl.innerHTML   = '<span class="status-pill offline">Offline</span>';
       statusEl.style.color = 'var(--red)';
     }
+
+    // Atualiza o mapa se existir
+    if (info.latDec !== undefined && info.lngDec !== undefined) {
+      updateTrapMap(info.latDec, info.lngDec, info.name, info.lat, info.lng);
+    }
+
+    // Atualiza seletor
+    renderTrapOptions();
   } catch(e) {
     showToast('Erro ao carregar dados da armadilha', 'error');
   }
@@ -1472,7 +1513,7 @@ function nextMonth() {
 async function loadCalendarMonth(year, month) {
   document.getElementById('calMonth').textContent = `${MONTHS_PT[month]} ${year}`;
   try {
-    const days = await API.getCalendarMonth('A-01', year, month);
+    const days = await API.getCalendarMonth(activeTrapId, year, month);
     calendarData = {};
     days.forEach(d => { calendarData[d.date] = d; });
     renderCalendar();
@@ -1586,7 +1627,7 @@ async function renderRangeSummary() {
 
   container.innerHTML = `<div class="empty-state"><div class="spinner"></div></div>`;
   try {
-    const days = await API.getCapturesByRange('A-01', rangeStart, rangeEnd);
+    const days = await API.getCapturesByRange(activeTrapId, rangeStart, rangeEnd);
     container.innerHTML = '';
 
     let totalCaps = 0, totalInsects = 0;
@@ -1667,7 +1708,7 @@ async function loadDayCaptures(key) {
   document.getElementById('dayHeaderSub').textContent  = 'Carregando...';
 
   try {
-    const caps = await API.getCapturesByDate('A-01', key);
+    const caps = await API.getCapturesByDate(activeTrapId, key);
     activeDayCaptures = caps;
     const total = caps.reduce((a,c) => a+c.count, 0);
 
@@ -1696,7 +1737,7 @@ async function loadDayCaptures(key) {
           <div class="cap-thumb-num ${cap.level}">${cap.count}</div>
         </div>
         <div class="cap-body">
-          <div class="cap-time">A-01 · ${key} · ${cap.time}</div>
+          <div class="cap-time">${activeTrapId} · ${key} · ${cap.time}</div>
           <div class="cap-title">Captura ${i+1} — ${cap.time}</div>
           <div class="cap-chips">
             <span class="cap-chip" style="${chipStyle(cap.level)}">${levelLabel[cap.level]}</span>
@@ -1799,7 +1840,7 @@ function renderViewer(dayKey, cap, allCaps, idx) {
   });
 
   // Modal data
-  document.getElementById('modalTitle').textContent  = `A-01 · ${fmtDate(date)} às ${cap.time}`;
+  document.getElementById('modalTitle').textContent  = `${activeTrapId} · ${fmtDate(date)} às ${cap.time}`;
   document.getElementById('modalCount').textContent  = `${cap.count} detectado${cap.count>1?'s':''}`;
   document.getElementById('modalConf').textContent   = `${cap.confidence}%`;
 }
@@ -1913,119 +1954,140 @@ async function verificarAuth() {
   }
 }
 
+
 /* ═══════════════════════════════════════════════════════════════
    MAPA — Leaflet.js
 ═══════════════════════════════════════════════════════════════ */
 let _trapMap    = null;
 let _trapMarker = null;
 
+function _buildMarker(name) {
+  const html = `<div style="position:relative;width:36px;height:44px;display:flex;flex-direction:column;align-items:center;"><div style="width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--green);border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;"><div style="transform:rotate(45deg);font-family:'JetBrains Mono',monospace;font-size:7px;font-weight:700;color:#0a0f0a;text-align:center;line-height:1;">SPY<br>TRAP</div></div><div style="width:2px;height:8px;background:rgba(0,0,0,.3);border-radius:1px;"></div></div>`;
+  return L.divIcon({ className:'', html, iconSize:[36,44], iconAnchor:[18,44], popupAnchor:[0,-46] });
+}
+
 function initTrapMap(lat, lng, name, latStr, lngStr) {
-  if (_trapMap) return; // já inicializado
+  if (_trapMap) { updateTrapMap(lat, lng, name, latStr, lngStr); return; }
+  _trapMap = L.map('trapMap', { zoomControl:true, attributionControl:false });
+  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom:19 });
+  const str = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 });
+  sat.addTo(_trapMap);
+  L.control.layers({'Satélite':sat,'Mapa':str},{},{position:'topright',collapsed:true}).addTo(_trapMap);
+  const popup = `<div style="padding:2px 0"><div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--green)">${name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted)">${latStr}, ${lngStr}</div></div>`;
+  L.marker([lat,lng],{icon:_buildMarker(name)}).addTo(_trapMap).bindPopup(popup,{maxWidth:240});
+  L.circle([lat,lng],{radius:200,color:'rgba(74,222,128,.6)',fillColor:'rgba(74,222,128,.08)',fillOpacity:1,weight:1.5}).addTo(_trapMap);
+  _trapMap.setView([lat,lng],16);
+}
 
-  _trapMap = L.map('trapMap', {
-    zoomControl: true,
-    attributionControl: false,
-  });
-
-  // ── Camadas de tiles ──────────────────────────────────────
-  const satellite = L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    { maxZoom: 19, attribution: 'ESRI World Imagery' }
-  );
-  const streets = L.tileLayer(
-    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    { maxZoom: 19, attribution: '© OpenStreetMap' }
-  );
-  satellite.addTo(_trapMap);
-
-  // ── Controle de camadas ──────────────────────────────────
-  L.control.layers(
-    { 'Satélite': satellite, 'Mapa': streets },
-    {},
-    { position: 'topright', collapsed: true }
-  ).addTo(_trapMap);
-
-  // ── Marcador personalizado ───────────────────────────────
-  const markerHtml = `
-    <div style="
-      position:relative; width:36px; height:44px;
-      display:flex; flex-direction:column; align-items:center;
-    ">
-      <div style="
-        width:36px; height:36px; border-radius:50% 50% 50% 0;
-        transform:rotate(-45deg);
-        background:var(--green); border:3px solid #fff;
-        box-shadow:0 3px 10px rgba(0,0,0,.45);
-        display:flex; align-items:center; justify-content:center;
-      ">
-        <div style="
-          transform:rotate(45deg);
-          font-family:'JetBrains Mono',monospace;
-          font-size:7px; font-weight:700;
-          color:#0a0f0a; letter-spacing:-.5px; line-height:1;
-          text-align:center;
-        ">SPY<br>TRAP</div>
-      </div>
-      <div style="
-        width:2px; height:8px;
-        background:rgba(0,0,0,.3); border-radius:1px;
-      "></div>
-    </div>`;
-
-  const icon = L.divIcon({
-    className: '',
-    html: markerHtml,
-    iconSize:   [36, 44],
-    iconAnchor: [18, 44],
-    popupAnchor:[0, -46],
-  });
-
-  const popupContent = `
-    <div style="padding:2px 0">
-      <div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--green)">${name}</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted)">${latStr}, ${lngStr}</div>
-      <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
-        <span style="
-          font-family:'JetBrains Mono',monospace;font-size:9px;
-          background:var(--green-dim);border:1px solid rgba(74,222,128,.3);
-          border-radius:4px;padding:2px 7px;color:var(--green);
-        ">● Online</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim)">Diatraea saccharalis</span>
-      </div>
-    </div>`;
-
-  _trapMarker = L.marker([lat, lng], { icon })
-    .addTo(_trapMap)
-    .bindPopup(popupContent, { maxWidth: 240 });
-
-  // Círculo de área de cobertura (raio aproximado ~200m)
-  L.circle([lat, lng], {
-    radius: 200,
-    color: 'rgba(74,222,128,.6)',
-    fillColor: 'rgba(74,222,128,.08)',
-    fillOpacity: 1,
-    weight: 1.5,
-  }).addTo(_trapMap);
-
-  _trapMap.setView([lat, lng], 16);
+function updateTrapMap(lat, lng, name, latStr, lngStr) {
+  if (!_trapMap) { initTrapMap(lat, lng, name, latStr, lngStr); return; }
+  _trapMap.eachLayer(l => { if (l instanceof L.Marker || l instanceof L.Circle) _trapMap.removeLayer(l); });
+  const popup = `<div style="padding:2px 0"><div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--green)">${name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted)">${latStr}, ${lngStr}</div></div>`;
+  L.marker([lat,lng],{icon:_buildMarker(name)}).addTo(_trapMap).bindPopup(popup,{maxWidth:240});
+  L.circle([lat,lng],{radius:200,color:'rgba(74,222,128,.6)',fillColor:'rgba(74,222,128,.08)',fillOpacity:1,weight:1.5}).addTo(_trapMap);
+  _trapMap.flyTo([lat,lng],16,{duration:1.2});
 }
 
 function showMapView() {
-  document.getElementById('calContent').style.display   = 'none';
-  document.getElementById('mapContent').classList.add('visible');
+  const cal = document.getElementById('calContent');
+  const map = document.getElementById('mapContent');
+  if (cal) cal.style.display = 'none';
+  if (map) map.classList.add('visible');
   document.getElementById('mptCal').classList.remove('active');
   document.getElementById('mptMap').classList.add('active');
-  // Leaflet precisa recalcular tamanho após display change
   if (_trapMap) setTimeout(() => _trapMap.invalidateSize(), 120);
-  // Sync mobile tab para calendário (que contém o mapa)
   if (window.innerWidth <= 700) mobileTab('calendar');
 }
 
 function showCalView() {
-  document.getElementById('mapContent').classList.remove('visible');
-  document.getElementById('calContent').style.display   = '';
+  const cal = document.getElementById('calContent');
+  const map = document.getElementById('mapContent');
+  if (map) map.classList.remove('visible');
+  if (cal) cal.style.display = '';
   document.getElementById('mptMap').classList.remove('active');
   document.getElementById('mptCal').classList.add('active');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SELETOR DE ARMADILHA
+═══════════════════════════════════════════════════════════════ */
+
+function toggleTrapDropdown() {
+  const wrap = document.getElementById('trapSelectorWrap');
+  wrap.classList.toggle('open');
+}
+
+// Fecha o dropdown ao clicar fora
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('trapSelectorWrap');
+  if (wrap && !wrap.contains(e.target)) wrap.classList.remove('open');
+});
+
+function renderTrapOptions() {
+  const list = document.getElementById('trapOptionsList');
+  if (!list || !trapList.length) return;
+
+  list.innerHTML = trapList.map(trap => `
+    <div class="trap-option ${trap.id === activeTrapId ? 'active' : ''}"
+         onclick="selectTrap('${trap.id}')">
+      <div class="trap-opt-dot ${trap.status}"></div>
+      <div class="trap-opt-info">
+        <div class="trap-opt-name">${trap.name}</div>
+        <div class="trap-opt-loc">${trap.lat}, ${trap.lng}</div>
+      </div>
+      <div class="trap-opt-badge ${trap.status}">
+        ${trap.status === 'online' ? 'Online' : 'Offline'}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function selectTrap(trapId) {
+  if (trapId === activeTrapId) {
+    document.getElementById('trapSelectorWrap').classList.remove('open');
+    return;
+  }
+
+  activeTrapId = trapId;
+  document.getElementById('trapSelectorWrap').classList.remove('open');
+
+  // Reseta o estado do dashboard
+  selectedDay        = dateKey(TODAY);
+  rangeStart         = null;
+  rangeEnd           = null;
+  activeCapture      = null;
+  activeDayCaptures  = [];
+  calYear            = TODAY.getFullYear();
+  calMonth           = TODAY.getMonth();
+
+  // Reseta o mapa se existir
+  if (_trapMap) {
+    _trapMap.remove();
+    _trapMap    = null;
+    _trapMarker = null;
+  }
+  showCalView(); // volta para aba calendário
+
+  // Reseta visualizador
+  clearViewer();
+
+  // Recarrega tudo para a nova armadilha
+  showToast(`Carregando ${trapList.find(t=>t.id===trapId)?.name || trapId}...`, 'info', 1800);
+  await loadTrapInfo(trapId);
+  await loadCalendarMonth(calYear, calMonth);
+  await loadDayCaptures(dateKey(TODAY));
+}
+
+async function loadTrapList() {
+  try {
+    trapList    = await API.getTrapList();
+    activeTrapId = trapList[0]?.id || 'SPY-01';
+    renderTrapOptions();
+  } catch(e) {
+    showToast('Erro ao carregar lista de armadilhas', 'error');
+    // Fallback: usa a primeira armadilha
+    activeTrapId = 'SPY-01';
+  }
 }
 
 (async function init() {
@@ -2036,7 +2098,9 @@ function showCalView() {
   // Mobile: show only calendar panel initially
   if (window.innerWidth <= 700) mobileTab('calendar');
 
-  await loadTrapInfo();
+  // Carrega lista de armadilhas e seleciona a primeira
+  await loadTrapList();
+  await loadTrapInfo(activeTrapId);
   await loadCalendarMonth(calYear, calMonth);
   await loadDayCaptures(dateKey(TODAY));
 })();
