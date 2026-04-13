@@ -225,7 +225,8 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
    TRAP BAR
 ════════════════════════════════════════ */
 .trap-bar {
-  position:relative; z-index:1;
+  position:relative; z-index:10; /* acima dos painéis (.main z-index:1) */
+  overflow:visible;              /* garante que o dropdown não seja cortado */
   margin:16px 20px 0;
   background:var(--surface); border:1px solid var(--border);
   border-radius:var(--radius-lg);
@@ -279,6 +280,164 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
   letter-spacing:1px; text-transform:uppercase;
   color:var(--text-muted); margin-top:3px;
 }
+/* ════════════════════════════════════════
+   SELETOR DE ARMADILHA
+════════════════════════════════════════ */
+.trap-selector-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.trap-selector-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: all .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.trap-selector-btn:hover,
+.trap-selector-wrap.open .trap-selector-btn {
+  border-color: var(--green);
+  background: var(--green-dim);
+}
+
+.trap-selector-name {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  letter-spacing: -.3px;
+}
+
+.trap-selector-chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform .2s;
+  display: flex;
+  align-items: center;
+}
+.trap-selector-wrap.open .trap-selector-chevron {
+  transform: rotate(180deg);
+  color: var(--green);
+}
+
+/* Dropdown */
+.trap-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  min-width: 240px;
+  z-index: 80;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.12);
+  animation: fadeUp .18s ease;
+}
+.trap-selector-wrap.open .trap-dropdown {
+  display: block;
+}
+
+.trap-dropdown-header {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 4px 10px 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+/* Cada opção */
+.trap-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.trap-option:hover {
+  background: var(--surface2);
+}
+.trap-option.active {
+  background: var(--green-dim);
+}
+.trap-option.active .trap-opt-name {
+  color: var(--green);
+}
+
+/* Dot de status na opção */
+.trap-opt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.trap-opt-dot.online  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.trap-opt-dot.offline { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+
+/* Info textual da opção */
+.trap-opt-info {
+  flex: 1;
+  min-width: 0;
+}
+.trap-opt-name {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trap-opt-loc {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Badge Online/Offline na opção */
+.trap-opt-badge {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  border: 1px solid;
+  flex-shrink: 0;
+  letter-spacing: .3px;
+}
+.trap-opt-badge.online  {
+  color: var(--green);
+  border-color: rgba(74,222,128,.35);
+  background: var(--green-dim);
+}
+.trap-opt-badge.offline {
+  color: var(--red);
+  border-color: rgba(248,113,113,.35);
+  background: var(--red-dim);
+}
+
+/* Coords clicável */
+.coords-link {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: opacity .15s;
+}
+.coords-link:hover { opacity: .7; }
+
 
 /* ════════════════════════════════════════
    MAIN GRID — DESKTOP 3 COL
@@ -715,6 +874,13 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
   background: var(--surface);
   box-shadow: 0 1px 8px rgba(0,0,0,.06);
 }
+[data-theme="light"] .trap-dropdown {
+  box-shadow: 0 8px 24px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.06);
+}
+[data-theme="light"] .trap-selector-btn:hover,
+[data-theme="light"] .trap-selector-wrap.open .trap-selector-btn {
+  background: var(--green-dim);
+}
 [data-theme="light"] .tstat {
   background: var(--surface);
 }
@@ -755,7 +921,7 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
   :root { --header-h:52px; }
 
   .trap-selector-name { font-size:13px; }
-  .trap-dropdown { min-width:190px; }
+  .trap-dropdown { min-width: 200px; max-width: calc(100vw - 28px); left: 0; }
 
 
   .header { padding:0 14px; }
@@ -895,7 +1061,7 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
     <div class="vdiv"></div>
     <div class="trap-field">
       <div class="label">Localização</div>
-      <div class="trap-field-val coords" id="trapCoords">—</div>
+      <div class="trap-field-val coords coords-link" id="trapCoords" onclick="showMapView()" title="Ver no mapa"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg><span id="trapCoordsText">—</span></div>
     </div>
     <div class="vdiv"></div>
     <div class="trap-field">
@@ -1127,12 +1293,24 @@ const API = {
    * Retorno esperado: Array<{ id, name, lat, lng, latDec, lngDec, status }>
    */
   async getTrapList() {
-    // ── MOCK ── remova e descomente o fetch abaixo
-    return MOCK_TRAPS;
-    // ── REAL ──
-    // const res = await fetch(`${this.BASE_URL}/traps`, { headers: this.getHeaders() });
-    // if (!res.ok) throw new Error('Falha ao buscar armadilhas');
-    // return res.json();
+    // ── REAL ── busca armadilhas cadastradas no banco
+    try {
+      const res = await fetch(`${this.BASE_URL}/api/traps`, {
+        headers: this.getHeaders(),
+        signal:  AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const lista = await res.json();
+      // Se retornou lista válida, usa; senão cai no fallback
+      if (Array.isArray(lista) && lista.length > 0) return lista;
+      // Banco sem armadilhas cadastradas ainda
+      if (Array.isArray(lista) && lista.length === 0) return [];
+      throw new Error('Resposta inválida da API');
+    } catch (err) {
+      // Fallback para mock quando API indisponível (ex: GitHub Pages sem backend)
+      console.warn('getTrapList: usando mock (API indisponível):', err.message);
+      return MOCK_TRAPS;
+    }
   },
 
   /**
@@ -1141,19 +1319,30 @@ const API = {
    * Retorno esperado: { id, name, lat, lng, latDec, lngDec, status, lastCapture, monthTotal, peakDay, monthCaptures }
    */
   async getTrapInfo(trapId) {
-    // ── MOCK ──
-    const trap = MOCK_TRAPS.find(t => t.id === trapId) || MOCK_TRAPS[0];
-    return {
-      ...trap,
-      lastCapture: 'Hoje às 19:00',
-      monthTotal:    Math.floor(Math.random() * 40) + 40,
-      peakDay:       Math.floor(Math.random() * 12) + 8,
-      monthCaptures: Math.floor(Math.random() * 10) + 18,
-    };
-    // ── REAL ──
-    // const res = await fetch(`${this.BASE_URL}/traps/${trapId}`, { headers: this.getHeaders() });
-    // if (!res.ok) throw new Error('Falha ao buscar dados da armadilha');
-    // return res.json();
+    // ── REAL ── busca dados completos da armadilha no banco
+    try {
+      const res = await fetch(`${this.BASE_URL}/api/traps/${trapId}`, {
+        headers: this.getHeaders(),
+        signal:  AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      // Fallback para mock quando API indisponível
+      console.warn(`getTrapInfo(${trapId}): usando mock:`, err.message);
+      const trap = MOCK_TRAPS.find(t => t.id === trapId) || MOCK_TRAPS[0];
+      const STATS = {
+        'SPY-01': { monthTotal: 63, peakDay: 18, monthCaptures: 21 },
+        'SPY-02': { monthTotal: 47, peakDay: 12, monthCaptures: 16 },
+        'SPY-03': { monthTotal: 0,  peakDay: 0,  monthCaptures: 0  },
+      };
+      const stats = STATS[trapId] || { monthTotal: 0, peakDay: 0, monthCaptures: 0 };
+      return {
+        ...trap,
+        lastCapture: trap.status === 'online' ? 'Hoje às 19:00' : 'Sem sinal',
+        ...stats,
+      };
+    }
   },
 
   /**
@@ -1287,9 +1476,6 @@ function getMockData(trapId) {
   MOCK_CACHE[trapId] = buildMockData(seed);
   return MOCK_CACHE[trapId];
 }
-
-// Mantém compatibilidade: MOCK_DATA aponta para a armadilha ativa
-function getMockForActive() { return getMockData(activeTrapId); }
 
 function buildMockData(seed = 49) {
   const data = {};
@@ -1460,15 +1646,16 @@ async function loadTrapInfo(trapId) {
 
     const dot = document.getElementById('trapStatusDot');
     const statusEl = document.getElementById('trapStatus');
-    // Reset para online
-    dot.style.background = 'var(--green)';
-    dot.style.boxShadow  = '0 0 8px var(--green)';
-    statusEl.innerHTML   = '<span class="status-pill online">Online</span>';
-    statusEl.style.color = '';
-
-    if (info.status !== 'online') {
+    if (info.status === 'online') {
+      dot.style.background = 'var(--green)';
+      dot.style.boxShadow  = '0 0 8px var(--green)';
+      dot.style.animation  = 'pulse 2s infinite';
+      statusEl.innerHTML   = '<span class="status-pill online">Online</span>';
+      statusEl.style.color = '';
+    } else {
       dot.style.background = 'var(--red)';
       dot.style.boxShadow  = '0 0 8px var(--red)';
+      dot.style.animation  = 'none';
       statusEl.innerHTML   = '<span class="status-pill offline">Offline</span>';
       statusEl.style.color = 'var(--red)';
     }
@@ -1478,8 +1665,6 @@ async function loadTrapInfo(trapId) {
       updateTrapMap(info.latDec, info.lngDec, info.name, info.lat, info.lng);
     }
 
-    // Atualiza seletor
-    renderTrapOptions();
   } catch(e) {
     showToast('Erro ao carregar dados da armadilha', 'error');
   }
@@ -2107,13 +2292,27 @@ async function selectTrap(trapId) {
 
 async function loadTrapList() {
   try {
-    trapList    = await API.getTrapList();
-    activeTrapId = trapList[0]?.id || 'SPY-01';
+    trapList = await API.getTrapList();
+
+    if (!trapList || trapList.length === 0) {
+      // Nenhuma armadilha cadastrada no banco ainda
+      document.getElementById('trapName').textContent = 'Nenhuma armadilha';
+      document.getElementById('trapStatus').innerHTML =
+        '<span class="status-pill offline">Sem cadastro</span>';
+      showToast('Nenhuma armadilha cadastrada no sistema.', 'info', 5000);
+      renderTrapOptions();
+      return;
+    }
+
+    activeTrapId = trapList[0].id;
     renderTrapOptions();
   } catch(e) {
-    showToast('Erro ao carregar lista de armadilhas', 'error');
-    // Fallback: usa a primeira armadilha
-    activeTrapId = 'SPY-01';
+    console.error('loadTrapList:', e);
+    showToast('Erro ao carregar armadilhas', 'error');
+    // Fallback mock se API falhar completamente
+    trapList     = MOCK_TRAPS;
+    activeTrapId = MOCK_TRAPS[0].id;
+    renderTrapOptions();
   }
 }
 
