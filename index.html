@@ -2414,15 +2414,26 @@ function mapSelectTrap(trapId) {
 }
 
 // ── Ver todas: ajusta zoom para caber todos os marcadores ──────
-function mapFitAll() {
+function mapFitAll(animate) {
+  animate = animate !== false; // padrão true
   if (!_trapMap || !trapList.length) return;
-  if (trapList.length === 1) {
-    _trapMap.flyTo([trapList[0].latDec, trapList[0].lngDec], 15, { duration: 0.8 });
-    return;
-  }
-  const coords = trapList.filter(t => t.latDec != null).map(t => [t.latDec, t.lngDec]);
-  if (coords.length) {
-    _trapMap.flyToBounds(L.latLngBounds(coords).pad(0.35), { duration: 1, maxZoom: 16 });
+  const coords = trapList
+    .filter(t => t.latDec != null && t.lngDec != null)
+    .map(t => [t.latDec, t.lngDec]);
+  if (!coords.length) return;
+  try {
+    if (coords.length === 1) {
+      if (animate) _trapMap.flyTo(coords[0], 15, { duration: 0.8 });
+      else         _trapMap.setView(coords[0], 15);
+    } else {
+      const bounds = L.latLngBounds(coords).pad(0.35);
+      if (animate) _trapMap.flyToBounds(bounds, { duration: 1, maxZoom: 16 });
+      else         _trapMap.fitBounds(bounds, { maxZoom: 16 });
+    }
+  } catch(e) {
+    // flyTo/flyToBounds falham se o mapa não tiver view inicial — usa versão sem animação
+    if (coords.length === 1) _trapMap.setView(coords[0], 15);
+    else _trapMap.fitBounds(L.latLngBounds(coords).pad(0.35), { maxZoom: 16 });
   }
 }
 
@@ -2452,7 +2463,7 @@ function initAllTrapsMap() {
     _trapMarkers[trap.id] = marker;
   });
   _mapInitialized = true;
-  mapFitAll();
+  mapFitAll(false); // sem animação na primeira abertura
   renderMapOverlay();
 }
 
