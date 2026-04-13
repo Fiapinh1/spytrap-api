@@ -1000,6 +1000,144 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
 [data-theme="dark"] .leaflet-container { background:var(--surface2); }
 .coords-link { cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:opacity .15s; }
 .coords-link:hover { opacity:.75; }
+/* ── MAP OVERLAY PANEL ── */
+.map-overlay {
+  position: absolute;
+  bottom: 20px; left: 12px;
+  z-index: 500;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0;
+  min-width: 190px;
+  max-width: 220px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.22);
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+}
+
+.map-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.map-overlay-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.map-overlay-count {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  background: var(--green-dim);
+  color: var(--green);
+  border: 1px solid rgba(74,222,128,.3);
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+
+.map-overlay-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 5px;
+}
+.map-overlay-list::-webkit-scrollbar { width: 3px; }
+.map-overlay-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.map-trap-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.map-trap-item:hover { background: var(--surface2); }
+.map-trap-item.active {
+  background: var(--green-dim);
+}
+
+.map-trap-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.map-trap-dot.online  { background: var(--green); box-shadow: 0 0 5px var(--green); }
+.map-trap-dot.offline { background: var(--red);   box-shadow: 0 0 5px var(--red); }
+
+.map-trap-info { flex: 1; min-width: 0; }
+.map-trap-name {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+.map-trap-item.active .map-trap-name { color: var(--green); }
+.map-trap-status {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* Botão "Ver todas" */
+.map-btn-fitall {
+  position: absolute;
+  top: 12px; left: 12px;
+  z-index: 500;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 11px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  -webkit-tap-highlight-color: transparent;
+}
+.map-btn-fitall:hover {
+  border-color: var(--green);
+  color: var(--green);
+  background: var(--green-dim);
+}
+
+/* Marcador ativo — anel de pulso */
+@keyframes markerPulse {
+  0%   { transform: translate(-50%,-50%) scale(1);   opacity: .6; }
+  100% { transform: translate(-50%,-50%) scale(2.2); opacity: 0;  }
+}
+.marker-pulse-ring {
+  position: absolute;
+  top: 22px; left: 18px;
+  width: 36px; height: 36px;
+  border-radius: 50% 50% 50% 0;
+  transform: translate(-50%,-50%) rotate(-45deg);
+  border: 2px solid var(--green);
+  animation: markerPulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+
+/* map-container ajuste de altura */
+.map-container { position: relative; }
+[data-theme="light"] .map-overlay {
+  box-shadow: 0 4px 20px rgba(0,0,0,.10);
+}
+
+
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1139,6 +1277,22 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
     </div><!-- /calContent -->
     <div id="mapContent" class="map-container">
       <div id="trapMap" style="width:100%;height:100%;min-height:260px;"></div>
+
+      <!-- Botão Ver Todas -->
+      <button class="map-btn-fitall" id="mapBtnFitAll" onclick="mapFitAll()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg> VER TODAS
+      </button>
+
+      <!-- Painel de armadilhas -->
+      <div class="map-overlay" id="mapOverlay">
+        <div class="map-overlay-header">
+          <span class="map-overlay-title">Armadilhas</span>
+          <span class="map-overlay-count" id="mapOverlayCount">0</span>
+        </div>
+        <div class="map-overlay-list" id="mapOverlayList">
+          <!-- preenchido por renderMapOverlay() -->
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2167,38 +2321,159 @@ async function verificarAuth() {
 }
 
 
+
 /* ═══════════════════════════════════════════════════════════════
-   MAPA — Leaflet.js
+   MAPA — Leaflet.js (multi-armadilha)
 ═══════════════════════════════════════════════════════════════ */
-let _trapMap    = null;
-let _trapMarker = null;
+let _trapMap        = null;
+let _trapMarkers    = {};     // { 'SPY-01': L.Marker, ... }
+let _mapInitialized = false;
 
-function _buildMarker(name) {
-  const html = `<div style="position:relative;width:36px;height:44px;display:flex;flex-direction:column;align-items:center;"><div style="width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--green);border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;"><div style="transform:rotate(45deg);font-family:'JetBrains Mono',monospace;font-size:7px;font-weight:700;color:#0a0f0a;text-align:center;line-height:1;">SPY<br>TRAP</div></div><div style="width:2px;height:8px;background:rgba(0,0,0,.3);border-radius:1px;"></div></div>`;
-  return L.divIcon({ className:'', html, iconSize:[36,44], iconAnchor:[18,44], popupAnchor:[0,-46] });
+// ── Constrói HTML do marcador ──────────────────────────────────
+function _buildMarkerHTML(trap, isActive) {
+  const isOnline  = trap.status === 'online';
+  const color     = isOnline ? 'var(--green)' : 'var(--red)';
+  const colorHex  = isOnline ? '#4ade80' : '#f87171';
+  const pinSize   = isActive ? 36 : 26;
+  const totalH    = isActive ? 44 + 24 : 32;
+  const stemH     = isActive ? 8 : 5;
+  const fontSize  = isActive ? '7px' : '5.5px';
+  const borderW   = isActive ? 3 : 2;
+  const shadow    = isActive
+    ? `0 3px 12px rgba(0,0,0,.5),0 0 0 3px ${colorHex}44`
+    : `0 2px 8px rgba(0,0,0,.35)`;
+  const pulse = isActive && isOnline
+    ? `<div class="marker-pulse-ring"></div>` : '';
+  const label = isActive
+    ? `<div style="position:absolute;top:${pinSize+stemH+6}px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid ${color};border-radius:3px;padding:2px 6px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;color:${color};white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.2);pointer-events:none">${trap.name}</div>` : '';
+  return `<div style="position:relative;width:${pinSize}px;height:${totalH}px;display:flex;flex-direction:column;align-items:center;">
+    ${pulse}
+    <div style="width:${pinSize}px;height:${pinSize}px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};border:${borderW}px solid #fff;box-shadow:${shadow};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <div style="transform:rotate(45deg);font-family:'JetBrains Mono',monospace;font-size:${fontSize};font-weight:700;color:#0a0f0a;text-align:center;line-height:1.1;">SPY<br>TRAP</div>
+    </div>
+    <div style="width:2px;height:${stemH}px;background:rgba(0,0,0,.3);border-radius:1px;"></div>
+    ${label}
+  </div>`;
 }
 
-function initTrapMap(lat, lng, name, latStr, lngStr) {
-  if (_trapMap) { updateTrapMap(lat, lng, name, latStr, lngStr); return; }
-  _trapMap = L.map('trapMap', { zoomControl:true, attributionControl:false });
-  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom:19 });
-  const str = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 });
-  sat.addTo(_trapMap);
-  L.control.layers({'Satélite':sat,'Mapa':str},{},{position:'topright',collapsed:true}).addTo(_trapMap);
-  const popup = `<div style="padding:2px 0"><div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--green)">${name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted)">${latStr}, ${lngStr}</div></div>`;
-  L.marker([lat,lng],{icon:_buildMarker(name)}).addTo(_trapMap).bindPopup(popup,{maxWidth:240});
-  L.circle([lat,lng],{radius:200,color:'rgba(74,222,128,.6)',fillColor:'rgba(74,222,128,.08)',fillOpacity:1,weight:1.5}).addTo(_trapMap);
-  _trapMap.setView([lat,lng],16);
+function _makeIcon(trap, isActive) {
+  const pinSize = isActive ? 36 : 26;
+  const totalH  = isActive ? 44 + 24 : 32;
+  return L.divIcon({
+    className:   '',
+    html:        _buildMarkerHTML(trap, isActive),
+    iconSize:    [pinSize, totalH],
+    iconAnchor:  [pinSize / 2, totalH],
+    popupAnchor: [0, -(totalH + 6)],
+  });
 }
 
-function updateTrapMap(lat, lng, name, latStr, lngStr) {
-  if (!_trapMap) { initTrapMap(lat, lng, name, latStr, lngStr); return; }
-  _trapMap.eachLayer(l => { if (l instanceof L.Marker || l instanceof L.Circle) _trapMap.removeLayer(l); });
-  const popup = `<div style="padding:2px 0"><div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--green)">${name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted)">${latStr}, ${lngStr}</div></div>`;
-  L.marker([lat,lng],{icon:_buildMarker(name)}).addTo(_trapMap).bindPopup(popup,{maxWidth:240});
-  L.circle([lat,lng],{radius:200,color:'rgba(74,222,128,.6)',fillColor:'rgba(74,222,128,.08)',fillOpacity:1,weight:1.5}).addTo(_trapMap);
-  _trapMap.flyTo([lat,lng],16,{duration:1.2});
+// ── Popup HTML com botão de seleção ────────────────────────────
+function _popupHTML(trap) {
+  const statusColor = trap.status === 'online' ? 'var(--green)' : 'var(--red)';
+  const statusLabel = trap.status === 'online' ? '● Online' : '● Offline';
+  const extras = [
+    trap.fazenda     ? `<div style="margin-top:4px;font-size:10px;color:var(--text-muted)">📍 ${trap.fazenda}</div>` : '',
+    trap.cultura     ? `<div style="font-size:10px;color:var(--text-muted)">🌿 ${trap.cultura}</div>` : '',
+    trap.responsavel ? `<div style="font-size:10px;color:var(--text-muted)">👤 ${trap.responsavel}</div>` : '',
+  ].filter(Boolean).join('');
+  return `<div style="padding:4px 2px;min-width:160px;">
+    <div style="font-weight:800;font-size:13px;color:var(--text);margin-bottom:2px;">${trap.name}</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:6px;">${trap.lat || ''}, ${trap.lng || ''}</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:${statusColor};margin-bottom:${extras?'8px':'0'};">${statusLabel}</div>
+    ${extras}
+    <button onclick="mapSelectTrap('${trap.id}')" style="margin-top:10px;width:100%;padding:6px;background:var(--green-dim);border:1px solid rgba(74,222,128,.4);border-radius:5px;color:var(--green);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;font-weight:700;">
+      SELECIONAR
+    </button>
+  </div>`;
 }
+
+// ── Painel overlay de armadilhas ────────────────────────────────
+function renderMapOverlay() {
+  const list  = document.getElementById('mapOverlayList');
+  const count = document.getElementById('mapOverlayCount');
+  if (!list) return;
+  count.textContent = trapList.length;
+  const check = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  list.innerHTML = trapList.map(trap => `
+    <div class="map-trap-item ${trap.id === activeTrapId ? 'active' : ''}"
+         onclick="mapSelectTrap('${trap.id}')">
+      <div class="map-trap-dot ${trap.status}"></div>
+      <div class="map-trap-info">
+        <div class="map-trap-name">${trap.name}</div>
+        <div class="map-trap-status">${trap.status === 'online' ? 'Online' : 'Offline'}</div>
+      </div>
+      ${trap.id === activeTrapId ? check : ''}
+    </div>`).join('');
+}
+
+// ── Seleciona armadilha pelo mapa ──────────────────────────────
+function mapSelectTrap(trapId) {
+  if (_trapMap) _trapMap.closePopup();
+  selectTrap(trapId);
+}
+
+// ── Ver todas: ajusta zoom para caber todos os marcadores ──────
+function mapFitAll() {
+  if (!_trapMap || !trapList.length) return;
+  if (trapList.length === 1) {
+    _trapMap.flyTo([trapList[0].latDec, trapList[0].lngDec], 15, { duration: 0.8 });
+    return;
+  }
+  const coords = trapList.filter(t => t.latDec != null).map(t => [t.latDec, t.lngDec]);
+  if (coords.length) {
+    _trapMap.flyToBounds(L.latLngBounds(coords).pad(0.35), { duration: 1, maxZoom: 16 });
+  }
+}
+
+// ── Inicializa o mapa com todas as armadilhas ──────────────────
+function initAllTrapsMap() {
+  if (!trapList.length) return;
+  if (!_trapMap) {
+    _trapMap = L.map('trapMap', { zoomControl: true, attributionControl: false });
+    const sat = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 19 }
+    );
+    const str = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
+    sat.addTo(_trapMap);
+    L.control.layers({'Satélite': sat, 'Mapa': str}, {}, { position: 'topright', collapsed: true }).addTo(_trapMap);
+  }
+  // Remove marcadores antigos
+  Object.values(_trapMarkers).forEach(m => _trapMap.removeLayer(m));
+  _trapMarkers = {};
+  // Adiciona um marcador por armadilha
+  trapList.forEach(trap => {
+    if (trap.latDec == null || trap.lngDec == null) return;
+    const isActive = trap.id === activeTrapId;
+    const marker = L.marker([trap.latDec, trap.lngDec], { icon: _makeIcon(trap, isActive) })
+      .addTo(_trapMap)
+      .bindPopup(_popupHTML(trap), { maxWidth: 220 });
+    _trapMarkers[trap.id] = marker;
+  });
+  _mapInitialized = true;
+  mapFitAll();
+  renderMapOverlay();
+}
+
+// ── Atualiza marcadores quando muda a armadilha ativa ─────────
+function updateMapSelection() {
+  if (!_trapMap || !_mapInitialized) return;
+  trapList.forEach(trap => {
+    const marker = _trapMarkers[trap.id];
+    if (!marker) return;
+    marker.setIcon(_makeIcon(trap, trap.id === activeTrapId));
+  });
+  const active = trapList.find(t => t.id === activeTrapId);
+  if (active && active.latDec != null) {
+    _trapMap.flyTo([active.latDec, active.lngDec], 16, { duration: 1.2 });
+  }
+  renderMapOverlay();
+}
+
+// ── Compat com chamadas antigas ────────────────────────────────
+function initTrapMap()   { initAllTrapsMap(); }
+function updateTrapMap() { updateMapSelection(); }
 
 function showMapView() {
   const cal = document.getElementById('calContent');
@@ -2207,8 +2482,12 @@ function showMapView() {
   if (map) map.classList.add('visible');
   document.getElementById('mptCal').classList.remove('active');
   document.getElementById('mptMap').classList.add('active');
-  if (_trapMap) setTimeout(() => _trapMap.invalidateSize(), 120);
   if (window.innerWidth <= 700) mobileTab('calendar');
+  setTimeout(() => {
+    if (_trapMap) _trapMap.invalidateSize();
+    if (!_mapInitialized) initAllTrapsMap();
+    else renderMapOverlay();
+  }, 120);
 }
 
 function showCalView() {
