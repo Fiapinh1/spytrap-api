@@ -2562,11 +2562,13 @@ async function selectTrap(trapId) {
   calYear            = TODAY.getFullYear();
   calMonth           = TODAY.getMonth();
 
-  // Reseta o mapa se existir
+  // Reseta o mapa
   if (_trapMap) {
     _trapMap.remove();
-    _trapMap    = null;
-    _trapMarker = null;
+    _trapMap        = null;
+    _trapMarker     = null;
+    _trapMarkers    = {};
+    _mapInitialized = false; // ← força reinicialização ao abrir o mapa
   }
   showCalView(); // volta para aba calendário
 
