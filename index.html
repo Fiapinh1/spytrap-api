@@ -1113,6 +1113,248 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
   flex: 1;
   min-height: 400px;
 }
+
+/* ════════════════════════════════════════
+   PAINEL RELATÓRIOS
+════════════════════════════════════════ */
+.panel-reports {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex; flex-direction: column;
+  animation: fadeUp .4s ease .15s both;
+  overflow: hidden;
+}
+
+/* Abas internas do relatório */
+.rep-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.rep-tab {
+  flex: 1; padding: 10px 4px; text-align: center;
+  font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: .8px; text-transform: uppercase;
+  color: var(--text-muted); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .15s;
+}
+.rep-tab.active { color: var(--green); border-bottom-color: var(--green); }
+.rep-tab:hover:not(.active) { color: var(--text); }
+
+.rep-body {
+  flex: 1; overflow-y: auto; padding: 14px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.rep-body::-webkit-scrollbar { width: 3px; }
+.rep-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Filtros do relatório */
+.rep-filters {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.rep-select {
+  flex: 1; min-width: 0;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 7px 10px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--text);
+  outline: none; cursor: pointer; transition: border-color .15s;
+  color-scheme: dark;
+}
+[data-theme="light"] .rep-select { color-scheme: light; }
+.rep-select:focus { border-color: var(--green); }
+
+.rep-btn-filter {
+  background: var(--green-dim); border: 1px solid var(--green);
+  border-radius: var(--radius-sm); padding: 7px 14px;
+  font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: .8px; color: var(--green);
+  cursor: pointer; transition: all .2s; white-space: nowrap;
+}
+.rep-btn-filter:hover { background: var(--green); color: var(--text-invert); }
+
+/* KPIs do relatório */
+.rep-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.rep-kpi {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px;
+  position: relative; overflow: hidden;
+}
+.rep-kpi::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.rep-kpi.green::after { background: var(--green); }
+.rep-kpi.amber::after { background: var(--amber); }
+.rep-kpi.red::after   { background: var(--red); }
+.rep-kpi.blue::after  { background: var(--blue); }
+.rep-kpi-val {
+  font-size: 22px; font-weight: 800; line-height: 1; font-family: var(--font-mono);
+}
+.rep-kpi.green .rep-kpi-val { color: var(--green); }
+.rep-kpi.amber .rep-kpi-val { color: var(--amber); }
+.rep-kpi.red   .rep-kpi-val { color: var(--red);   }
+.rep-kpi.blue  .rep-kpi-val { color: var(--blue);  }
+.rep-kpi-lbl {
+  font-family: var(--font-mono); font-size: 8px;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text-muted); margin-top: 4px;
+}
+.rep-kpi-sub {
+  font-family: var(--font-mono); font-size: 9px;
+  color: var(--text-dim); margin-top: 2px;
+}
+
+/* Tendência badge */
+.trend-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--font-mono); font-size: 9px;
+  padding: 2px 8px; border-radius: 3px; border: 1px solid;
+}
+.trend-badge.subindo { color: var(--red);   border-color: rgba(248,113,113,.3); background: var(--red-dim); }
+.trend-badge.caindo  { color: var(--green); border-color: rgba(74,222,128,.3);  background: var(--green-dim); }
+.trend-badge.estável { color: var(--blue);  border-color: rgba(96,165,250,.3);  background: var(--blue-dim); }
+
+/* Gráfico canvas */
+.rep-chart-wrap {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px;
+}
+.rep-chart-title {
+  font-size: 11px; font-weight: 700; margin-bottom: 8px;
+  color: var(--text-muted);
+}
+.rep-canvas-container { position: relative; height: 140px; }
+
+/* Comparativo barra */
+.rep-cmp-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+}
+.rep-cmp-row:last-child { border-bottom: none; }
+.rep-cmp-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.rep-cmp-name { font-size: 11px; font-weight: 700; min-width: 80px; }
+.rep-cmp-bar-wrap { flex: 1; background: var(--surface2); border-radius: 2px; height: 6px; overflow: hidden; }
+.rep-cmp-bar { height: 100%; border-radius: 2px; transition: width .6s ease; }
+.rep-cmp-val { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); min-width: 36px; text-align: right; }
+
+/* Botões exportar */
+.rep-export-row {
+  display: flex; gap: 8px; flex-shrink: 0;
+  padding-top: 4px;
+}
+.rep-export-btn {
+  flex: 1; padding: 9px;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .8px;
+  border-radius: var(--radius-sm); cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.rep-export-btn.pdf {
+  background: var(--red-dim); border: 1px solid rgba(248,113,113,.35);
+  color: var(--red);
+}
+.rep-export-btn.pdf:hover { background: rgba(248,113,113,.18); }
+.rep-export-btn.csv {
+  background: var(--green-dim); border: 1px solid rgba(74,222,128,.35);
+  color: var(--green);
+}
+.rep-export-btn.csv:hover { background: rgba(74,222,128,.18); }
+
+/* Estado vazio */
+.rep-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 10px; opacity: .4; padding: 24px;
+}
+.rep-empty-icon { font-size: 32px; }
+.rep-empty-txt { font-family: var(--font-mono); font-size: 10px; text-align: center; line-height: 1.7; }
+
+/* Loading spinner no relatório */
+.rep-loading {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; padding: 20px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
+}
+
+/* ════════════════════════════════════════
+   ABA MAPA DE CALOR
+════════════════════════════════════════ */
+.heat-filters {
+  position: absolute;
+  top: 12px; left: 12px;
+  z-index: 500;
+  display: flex; gap: 6px; align-items: center;
+}
+.heat-select {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 5px 10px;
+  font-family: var(--font-mono); font-size: 9px; color: var(--text);
+  outline: none; cursor: pointer; transition: border-color .15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  color-scheme: dark;
+}
+[data-theme="light"] .heat-select { color-scheme: light; }
+.heat-select:focus { border-color: var(--green); }
+
+.heat-legend {
+  position: absolute;
+  bottom: 20px; right: 12px;
+  z-index: 500;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.heat-legend-bar {
+  width: 60px; height: 6px; border-radius: 3px;
+  background: linear-gradient(to right, #22c55e, #eab308, #f97316, #ef4444);
+}
+.heat-legend-lbl { color: var(--text-muted); }
+
+/* Contador de armadilhas no calor */
+.heat-stat {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.heat-stat-val { font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
+.heat-stat.critical .heat-stat-val { color: var(--red); }
+.heat-stat.warn      .heat-stat-val { color: var(--amber); }
+.heat-stat.ok        .heat-stat-val { color: var(--green); }
+
+/* ── DESKTOP 4 COL (relatórios) ── */
+@media(min-width: 1200px) {
+  .main.show-reports {
+    grid-template-columns: 260px 1fr 1.3fr 280px;
+  }
+}
+
+/* Print */
+@media print {
+  body > *:not(#printReport) { display: none !important; }
+  #printReport {
+    display: block !important;
+    position: fixed; inset: 0;
+    background: white; color: black;
+    padding: 32px; font-family: Arial, sans-serif;
+  }
+  .print-header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 2px solid #16a34a; padding-bottom: 12px; margin-bottom: 24px;
+  }
+  .print-title { font-size: 20px; font-weight: 700; color: #16a34a; }
+  canvas { max-width: 100% !important; }
+}
+
 /* ════════════════════════════════════════
    RESPONSIVE — TABLET (≤1100px)
 ════════════════════════════════════════ */
@@ -1348,6 +1590,8 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -1439,13 +1683,14 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
 <!-- ══════════════════════════════════════
      MAIN
 ══════════════════════════════════════ -->
-<div class="main">
+<div class="main" id="main">
 
   <!-- COL 1: CALENDAR + MAPA -->
   <div class="panel" id="panelCalendar" data-panel="calendar">
     <div class="map-panel-tabs">
-      <div class="mpt active" id="mptCal" onclick="showCalView()">CALENDÁRIO</div>
-      <div class="mpt"        id="mptMap" onclick="showMapView()">MAPA</div>
+      <div class="mpt active" id="mptCal"  onclick="showCalView()">CALENDÁRIO</div>
+      <div class="mpt"        id="mptMap"  onclick="showMapView()">MAPA</div>
+      <div class="mpt"        id="mptHeat" onclick="showHeatView()">CALOR</div>
     </div>
     <div id="calContent">
     <div class="ph" style="margin-bottom:8px">
@@ -1487,6 +1732,25 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
       <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--green)"></div>Baixa</div>
     </div>
     </div><!-- /calContent -->
+
+    <!-- Mapa de Calor -->
+    <div id="heatContent" class="map-container" style="position:relative;">
+      <div class="heat-filters">
+        <select class="heat-select" id="heatPeriod" onchange="updateHeatmap()">
+          <option value="1">Hoje</option>
+          <option value="7" selected>7 dias</option>
+          <option value="30">30 dias</option>
+          <option value="90">90 dias</option>
+        </select>
+      </div>
+      <div id="trapHeatMap" style="width:100%;height:100%;min-height:260px;"></div>
+      <div class="heat-legend">
+        <span class="heat-legend-lbl">Baixa</span>
+        <div class="heat-legend-bar"></div>
+        <span class="heat-legend-lbl">Crítica</span>
+      </div>
+    </div>
+
     <div id="mapContent" class="map-container">
       <div id="trapMap" style="width:100%;height:100%;min-height:260px;"></div>
 
@@ -1561,6 +1825,22 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
     </div>
   </div>
 
+
+  <!-- COL 4: RELATÓRIOS -->
+  <div class="panel panel-reports" id="panelReports" data-panel="reports">
+    <div class="rep-tabs">
+      <div class="rep-tab active" id="repTabMensal"    onclick="repSetTab('mensal')">MENSAL</div>
+      <div class="rep-tab"        id="repTabCompar"    onclick="repSetTab('comparativo')">COMPARAR</div>
+      <div class="rep-tab"        id="repTabExport"    onclick="repSetTab('exportar')">EXPORTAR</div>
+    </div>
+    <div class="rep-body" id="repBody">
+      <div class="rep-empty">
+        <div class="rep-empty-icon">📊</div>
+        <div class="rep-empty-txt">Selecione um período<br>para gerar o relatório</div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /main -->
 
 <!-- ══════════════════════════════════════
@@ -1579,6 +1859,10 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
     <button class="bn-tab" id="bnViewer" onclick="mobileTab('viewer')">
       <span class="bn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="1"/><path d="M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0"/></svg></span>
       <span>IMAGEM</span>
+    </button>
+    <button class="bn-tab" id="bnReports" onclick="mobileTab('reports')">
+      <span class="bn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg></span>
+      <span>DADOS</span>
     </button>
   </div>
 </nav>
@@ -1783,6 +2067,77 @@ const API = {
    * Logout — invalida token no backend
    * API HOOK: POST /auth/logout
    */
+  // ── HEATMAP ────────────────────────────────────────────────
+  async getHeatmapData(startDate, endDate) {
+    try {
+      const res = await fetch(
+        `${this.BASE_URL}/api/heatmap?startDate=${startDate}&endDate=${endDate}`,
+        { headers: this.getHeaders(), signal: AbortSignal.timeout(10000) }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      console.warn('getHeatmapData: mock:', err.message);
+      // Mock: calcula a partir dos dados locais
+      return MOCK_TRAPS.map(trap => {
+        const data = getMockData(trap.id);
+        const caps = Object.values(data).flat();
+        const totalInsetos = caps.reduce((s, c) => s + c.count, 0);
+        const totalDias    = Object.keys(data).length;
+        const media        = totalDias > 0 ? totalInsetos / totalDias : 0;
+        return {
+          id: trap.id, name: trap.name || trap.nome || trap.id,
+          lat: trap.latDec, lng: trap.lngDec,
+          status: trap.status,
+          totalInsetos, totalDias,
+          mediaDiaria: parseFloat(media.toFixed(1)),
+          intensidade: media <= 0 ? 0 : media <= 3 ? 0.15 : media <= 7 ? 0.45 : media <= 12 ? 0.75 : 1.0,
+        };
+      });
+    }
+  },
+
+  // ── RELATÓRIOS ────────────────────────────────────────────────
+  async getReportSummary(trapId, startDate, endDate) {
+    try {
+      const res = await fetch(
+        `${this.BASE_URL}/api/reports/summary?trapId=${trapId}&startDate=${startDate}&endDate=${endDate}`,
+        { headers: this.getHeaders(), signal: AbortSignal.timeout(10000) }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      console.warn('getReportSummary: mock:', err.message);
+      return buildMockReport(trapId, startDate, endDate);
+    }
+  },
+
+  async getReportComparison(startDate, endDate) {
+    try {
+      const res = await fetch(
+        `${this.BASE_URL}/api/reports/comparison?startDate=${startDate}&endDate=${endDate}`,
+        { headers: this.getHeaders(), signal: AbortSignal.timeout(10000) }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      console.warn('getReportComparison: mock:', err.message);
+      return trapList.map(trap => {
+        const data = getMockData(trap.id);
+        const caps = Object.values(data).flat();
+        const totalInsetos = caps.reduce((s, c) => s + c.count, 0);
+        const totalDias    = Object.keys(data).length;
+        return {
+          id: trap.id, nome: trap.name || trap.nome || trap.id,
+          status: trap.status,
+          totalInsetos, totalCapturas: caps.length,
+          diasMonitorados: totalDias, diasAlta: caps.filter(c => c.level === 'high').length,
+          mediaDiaria: totalDias > 0 ? parseFloat((totalInsetos/totalDias).toFixed(1)) : 0,
+        };
+      }).sort((a, b) => b.totalInsetos - a.totalInsetos);
+    }
+  },
+
   async logout() {
     const token = localStorage.getItem('agrosentinel_token')
                || sessionStorage.getItem('agrosentinel_token');
@@ -1973,14 +2328,13 @@ function toggleTheme() {
 ═══════════════════════════════════════════════════════════════ */
 function mobileTab(panel) {
   mobileActivePanel = panel;
-  ['calendar','captures','viewer'].forEach(p => {
+  ['calendar','captures','viewer','reports'].forEach(p => {
     const el = document.getElementById(`panel${p.charAt(0).toUpperCase()+p.slice(1)}`);
     const bn = document.getElementById(`bn${p.charAt(0).toUpperCase()+p.slice(1)}`);
-    if (window.innerWidth <= 700) {
-      el.classList.toggle('mobile-active', p === panel);
-    }
-    bn.classList.toggle('active', p === panel);
+    if (el && window.innerWidth <= 700) el.classList.toggle('mobile-active', p === panel);
+    if (bn) bn.classList.toggle('active', p === panel);
   });
+  if (panel === 'reports') repInit();
 }
 
 function syncMobilePanels() {
@@ -1990,9 +2344,9 @@ function syncMobilePanels() {
       el.classList.toggle('mobile-active', p === mobileActivePanel);
     });
   } else {
-    ['panelCalendar','panelCaptures'].forEach(id => {
-      document.getElementById(id).classList.remove('mobile-active');
-      document.getElementById(id).style.display = '';
+    ['panelCalendar','panelCaptures','panelReports'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.classList.remove('mobile-active'); el.style.display = ''; }
     });
   }
 }
@@ -2706,6 +3060,9 @@ function initTrapMap()   { initAllTrapsMap(); }
 function updateTrapMap() { updateMapSelection(); }
 
 function showMapView() {
+  const heat = document.getElementById('heatContent');
+  if (heat) heat.classList.remove('visible');
+  document.getElementById('mptHeat')?.classList.remove('active');
   const cal = document.getElementById('calContent');
   const map = document.getElementById('mapContent');
   if (cal) cal.style.display = 'none';
@@ -3078,6 +3435,547 @@ function initModalMap() {
   _modalInitialized = true;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   MAPA DE CALOR — Leaflet.heat
+═══════════════════════════════════════════════════════════════ */
+let _heatMap    = null;
+let _heatLayer  = null;
+let _heatMarkers = [];
+
+function showHeatView() {
+  document.getElementById('calContent').style.display  = 'none';
+  document.getElementById('mapContent').classList.remove('visible');
+  document.getElementById('heatContent').classList.add('visible');
+  ['mptCal','mptMap'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('mptHeat').classList.add('active');
+  if (window.innerWidth <= 700) mobileTab('calendar');
+
+  setTimeout(async () => {
+    if (_heatMap) _heatMap.invalidateSize();
+    await initHeatMap();
+  }, 120);
+}
+
+async function initHeatMap() {
+  if (!_heatMap) {
+    _heatMap = L.map('trapHeatMap', { zoomControl: true, attributionControl: false });
+    const sat = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 19 }
+    );
+    const str = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
+    sat.addTo(_heatMap);
+    L.control.layers({'Satélite': sat, 'Mapa': str}, {}, { position: 'topright', collapsed: true }).addTo(_heatMap);
+  }
+  await updateHeatmap();
+}
+
+async function updateHeatmap() {
+  const days     = parseInt(document.getElementById('heatPeriod')?.value || '7');
+  const endDate  = new Date();
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - days);
+
+  const pontos = await API.getHeatmapData(dateKey(startDate), dateKey(endDate));
+
+  // Remove layers anteriores
+  if (_heatLayer) { _heatMap.removeLayer(_heatLayer); _heatLayer = null; }
+  _heatMarkers.forEach(m => _heatMap.removeLayer(m));
+  _heatMarkers = [];
+
+  if (!pontos.length) return;
+
+  // Monta dados para o heatmap
+  const heatData = pontos
+    .filter(p => p.lat != null && p.lng != null)
+    .map(p => [p.lat, p.lng, p.intensidade || 0]);
+
+  if (heatData.length > 0 && typeof L.heatLayer === 'function') {
+    _heatLayer = L.heatLayer(heatData, {
+      radius:   55, blur: 35, maxZoom: 18,
+      gradient: { 0.0: '#22c55e', 0.35: '#eab308', 0.65: '#f97316', 1.0: '#ef4444' },
+    }).addTo(_heatMap);
+  }
+
+  // Marcadores de armadilha por cima
+  pontos.forEach(p => {
+    if (p.lat == null || p.lng == null) return;
+    const isOnline = p.status === 'online';
+    const color    = isOnline ? '#4ade80' : '#f87171';
+    const m = L.circleMarker([p.lat, p.lng], {
+      radius: 7, color: '#fff', weight: 2,
+      fillColor: color, fillOpacity: 1,
+    }).bindPopup(
+      `<div style="padding:2px">` +
+      `<div style="font-weight:700;font-size:12px;margin-bottom:3px">${p.name || p.id}</div>` +
+      `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted)">` +
+      `${p.totalInsetos} insetos · ${p.totalDias} dias</div>` +
+      `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:${color};margin-top:3px">` +
+      `${isOnline ? '● Online' : '● Offline'}</div></div>`,
+      { maxWidth: 200 }
+    ).addTo(_heatMap);
+    _heatMarkers.push(m);
+  });
+
+  // Fit
+  const coords = pontos.filter(p => p.lat != null).map(p => [p.lat, p.lng]);
+  if (coords.length === 1) _heatMap.setView(coords[0], 15);
+  else if (coords.length > 1) {
+    try { _heatMap.fitBounds(L.latLngBounds(coords).pad(0.35), { maxZoom: 16 }); }
+    catch(e) { _heatMap.setView(coords[0], 14); }
+  }
+}
+
+// Atualiza showCalView e showMapView para esconder heatContent
+const _origShowCalView = typeof showCalView === 'function' ? showCalView : null;
+function showCalView() {
+  const cal  = document.getElementById('calContent');
+  const map  = document.getElementById('mapContent');
+  const heat = document.getElementById('heatContent');
+  if (map)  map.classList.remove('visible');
+  if (heat) heat.classList.remove('visible');
+  if (cal)  cal.style.display = '';
+  ['mptMap','mptHeat'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+  document.getElementById('mptCal')?.classList.add('active');
+}
+
+// Patch showMapView to also hide heatContent
+const _origShowMapView = typeof showMapView !== 'undefined' ? null : null;
+
+
+/* ═══════════════════════════════════════════════════════════════
+   RELATÓRIOS
+═══════════════════════════════════════════════════════════════ */
+let _repTab        = 'mensal';
+let _repChart1     = null;
+let _repChart2     = null;
+let _repChart3     = null;
+let _repData       = null;
+let _repCmpData    = null;
+let _repInitialized = false;
+
+const MONTHS_LABEL = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+// Mock report builder
+function buildMockReport(trapId, startDate, endDate) {
+  const data    = getMockData(trapId);
+  const trap    = trapList.find(t => t.id === trapId) || { id: trapId, name: trapId, status: 'online' };
+  const porDia  = {};
+  const start   = new Date(startDate + 'T12:00:00');
+  const end     = new Date(endDate   + 'T12:00:00');
+  let totalInsetos = 0, totalCapturas = 0, picoInsetos = 0, diasAlta = 0;
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const key  = dateKey(d);
+    const caps = data[key] || [];
+    if (!caps.length) continue;
+    const dia = caps.reduce((s, c) => s + c.count, 0);
+    totalInsetos  += dia;
+    totalCapturas += caps.length;
+    porDia[key]    = dia;
+    if (dia > picoInsetos) picoInsetos = dia;
+    if (caps.some(c => c.level === 'high')) diasAlta++;
+  }
+
+  const diasMon = Object.keys(porDia).length;
+  const datas   = Object.keys(porDia).sort();
+  const metade  = Math.floor(datas.length / 2);
+  const p1 = datas.slice(0, metade).reduce((s, k) => s + porDia[k], 0);
+  const p2 = datas.slice(metade).reduce((s, k)  => s + porDia[k], 0);
+  const tend = p2 > p1 * 1.1 ? 'subindo' : p2 < p1 * 0.9 ? 'caindo' : 'estável';
+
+  return {
+    trap: { id: trap.id, nome: trap.name || trap.nome || trap.id, status: trap.status },
+    periodo: { startDate, endDate },
+    kpis: {
+      totalInsetos, totalCapturas, picoInsetos,
+      diasMonitorados: diasMon, diasAlta,
+      mediaDiaria: diasMon > 0 ? parseFloat((totalInsetos/diasMon).toFixed(1)) : 0,
+      tendencia: tend,
+    },
+    porDia,
+    top5: Object.entries(porDia).sort((a,b) => b[1]-a[1]).slice(0,5)
+      .map(([date, total]) => ({ data: date, hora: '—', total, nivel: total >= 8 ? 'high' : total >= 4 ? 'med' : 'low' })),
+  };
+}
+
+function repSetTab(tab) {
+  _repTab = tab;
+  ['mensal','comparativo','exportar'].forEach(t => {
+    document.getElementById('repTab' + t.charAt(0).toUpperCase() + t.slice(1))
+      ?.classList.toggle('active', t === tab);
+  });
+  repRender();
+}
+
+function repInit() {
+  if (!_repInitialized) {
+    _repInitialized = true;
+    repRender();
+  }
+}
+
+async function repRender() {
+  const body = document.getElementById('repBody');
+  if (!body) return;
+
+  if (_repTab === 'mensal')       await repRenderMensal(body);
+  else if (_repTab === 'comparativo') await repRenderCompar(body);
+  else                            repRenderExport(body);
+}
+
+// ── ABA MENSAL ────────────────────────────────────────────────
+async function repRenderMensal(body) {
+  // Período padrão: mês atual
+  const now  = new Date();
+  const y    = now.getFullYear(), m = now.getMonth();
+  const def_start = `${y}-${String(m+1).padStart(2,'0')}-01`;
+  const def_end   = dateKey(now);
+
+  body.innerHTML = `
+    <div class="rep-filters">
+      <select class="rep-select" id="repTrapSel">
+        ${trapList.map(t => `<option value="${t.id}" ${t.id===activeTrapId?'selected':''}>${t.name||t.nome||t.id}</option>`).join('')}
+      </select>
+      <select class="rep-select" id="repPeriodSel">
+        <option value="month">Mês atual</option>
+        <option value="7">Últimos 7 dias</option>
+        <option value="30">Últimos 30 dias</option>
+        <option value="90">Últimos 90 dias</option>
+      </select>
+      <button class="rep-btn-filter" onclick="repLoadMensal()">GERAR</button>
+    </div>
+    <div id="repMensalContent">
+      <div class="rep-empty"><div class="rep-empty-icon">📊</div><div class="rep-empty-txt">Clique em GERAR</div></div>
+    </div>`;
+}
+
+async function repLoadMensal() {
+  const trapId   = document.getElementById('repTrapSel').value;
+  const period   = document.getElementById('repPeriodSel').value;
+  const now      = new Date();
+  let startDate, endDate = dateKey(now);
+
+  if (period === 'month') {
+    startDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+  } else {
+    const s = new Date(now); s.setDate(now.getDate() - parseInt(period));
+    startDate = dateKey(s);
+  }
+
+  const target = document.getElementById('repMensalContent');
+  target.innerHTML = '<div class="rep-loading"><div class="spinner"></div> Carregando...</div>';
+
+  const data = await API.getReportSummary(trapId, startDate, endDate);
+  _repData   = data;
+
+  const { kpis, porDia, top5, trap } = data;
+  const trendClass = kpis.tendencia;
+  const trendArrow = kpis.tendencia === 'subindo' ? '↑' : kpis.tendencia === 'caindo' ? '↓' : '→';
+
+  const datas  = Object.keys(porDia).sort();
+  const labels = datas.map(d => { const dt = new Date(d+'T12:00:00'); return `${dt.getDate()}/${dt.getMonth()+1}`; });
+  const values = datas.map(d => porDia[d]);
+  const colors = values.map(v => v >= 13 ? '#ef4444' : v >= 8 ? '#f97316' : v >= 4 ? '#eab308' : '#22c55e');
+
+  // Destroy previous charts
+  if (_repChart1) { _repChart1.destroy(); _repChart1 = null; }
+  if (_repChart2) { _repChart2.destroy(); _repChart2 = null; }
+
+  target.innerHTML = `
+    <div class="rep-kpis">
+      <div class="rep-kpi amber">
+        <div class="rep-kpi-val">${kpis.totalInsetos}</div>
+        <div class="rep-kpi-lbl">Total insetos</div>
+      </div>
+      <div class="rep-kpi red">
+        <div class="rep-kpi-val">${kpis.picoInsetos}</div>
+        <div class="rep-kpi-lbl">Pico/dia</div>
+      </div>
+      <div class="rep-kpi green">
+        <div class="rep-kpi-val">${kpis.totalCapturas}</div>
+        <div class="rep-kpi-lbl">Capturas</div>
+      </div>
+      <div class="rep-kpi blue">
+        <div class="rep-kpi-val">${kpis.diasMonitorados}</div>
+        <div class="rep-kpi-lbl">Dias ativos</div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+      <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">Tendência:</span>
+      <span class="trend-badge ${trendClass}">${trendArrow} ${kpis.tendencia.charAt(0).toUpperCase()+kpis.tendencia.slice(1)}</span>
+      <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim)">·  Média ${kpis.mediaDiaria}/dia</span>
+    </div>
+
+    <div class="rep-chart-wrap">
+      <div class="rep-chart-title">Insetos por dia</div>
+      <div class="rep-canvas-container"><canvas id="repChart1"></canvas></div>
+    </div>
+    <div class="rep-chart-wrap">
+      <div class="rep-chart-title">Tendência (média móvel 3 dias)</div>
+      <div class="rep-canvas-container"><canvas id="repChart2"></canvas></div>
+    </div>`;
+
+  // Render charts
+  if (typeof Chart !== 'undefined' && datas.length) {
+    _repChart1 = new Chart(document.getElementById('repChart1'), {
+      type: 'bar',
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: 3 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { family: 'JetBrains Mono', size: 9 }, color: '#6b7e5a' }, grid: { color: 'rgba(74,222,128,.06)' } },
+          y: { beginAtZero: true, ticks: { font: { family: 'JetBrains Mono', size: 9 }, color: '#6b7e5a' }, grid: { color: 'rgba(74,222,128,.06)' } },
+        },
+      },
+    });
+
+    // Média móvel 3d
+    const mm3 = datas.map((_, i) => {
+      const sl = datas.slice(Math.max(0,i-2), i+1);
+      return parseFloat((sl.reduce((s,k) => s+porDia[k], 0) / sl.length).toFixed(1));
+    });
+    _repChart2 = new Chart(document.getElementById('repChart2'), {
+      type: 'line',
+      data: { labels, datasets: [
+        { label: 'Insetos/dia', data: values, borderColor: '#4ade80', backgroundColor: 'rgba(74,222,128,.08)', tension: 0.3, pointRadius: 3, fill: true },
+        { label: 'Média 3d',   data: mm3,    borderColor: '#f59e0b', borderDash: [5,5], tension: 0.4, pointRadius: 0 },
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { font: { family: 'JetBrains Mono', size: 9 }, color: '#6b7e5a', boxWidth: 12 } } },
+        scales: {
+          x: { ticks: { font: { family: 'JetBrains Mono', size: 9 }, color: '#6b7e5a' }, grid: { color: 'rgba(74,222,128,.06)' } },
+          y: { beginAtZero: true, ticks: { font: { family: 'JetBrains Mono', size: 9 }, color: '#6b7e5a' }, grid: { color: 'rgba(74,222,128,.06)' } },
+        },
+      },
+    });
+  }
+}
+
+// ── ABA COMPARATIVO ───────────────────────────────────────────
+async function repRenderCompar(body) {
+  body.innerHTML = `
+    <div class="rep-filters">
+      <select class="rep-select" id="repCmpPeriod">
+        <option value="7">Últimos 7 dias</option>
+        <option value="30" selected>Últimos 30 dias</option>
+        <option value="90">Últimos 90 dias</option>
+      </select>
+      <button class="rep-btn-filter" onclick="repLoadCompar()">COMPARAR</button>
+    </div>
+    <div id="repComparContent">
+      <div class="rep-empty"><div class="rep-empty-icon">📊</div><div class="rep-empty-txt">Clique em COMPARAR</div></div>
+    </div>`;
+}
+
+async function repLoadCompar() {
+  const days = parseInt(document.getElementById('repCmpPeriod').value);
+  const now  = new Date();
+  const s    = new Date(now); s.setDate(now.getDate() - days);
+
+  const target = document.getElementById('repComparContent');
+  target.innerHTML = '<div class="rep-loading"><div class="spinner"></div> Carregando...</div>';
+
+  const dados = await API.getReportComparison(dateKey(s), dateKey(now));
+  _repCmpData = dados;
+
+  if (!dados.length) {
+    target.innerHTML = '<div class="rep-empty"><div class="rep-empty-icon">📭</div><div class="rep-empty-txt">Nenhum dado encontrado</div></div>';
+    return;
+  }
+
+  if (_repChart3) { _repChart3.destroy(); _repChart3 = null; }
+
+  const max = Math.max(...dados.map(d => d.totalInsetos), 1);
+
+  const rows = dados.map(t => {
+    const pct   = ((t.totalInsetos / max) * 100).toFixed(0);
+    const color = t.status === 'offline' ? '#6b7280'
+                : t.totalInsetos >= 100  ? '#ef4444'
+                : t.totalInsetos >= 50   ? '#f97316' : '#4ade80';
+    const dot   = t.status === 'online' ? 'online' : 'offline';
+    return `<div class="rep-cmp-row">
+      <div class="rep-cmp-dot ${dot}"></div>
+      <div class="rep-cmp-name">${t.nome || t.id}</div>
+      <div class="rep-cmp-bar-wrap">
+        <div class="rep-cmp-bar" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <div class="rep-cmp-val">${t.totalInsetos}</div>
+    </div>`;
+  }).join('');
+
+  target.innerHTML = `
+    <div class="rep-chart-wrap" style="padding:10px 12px">
+      <div class="rep-chart-title">Total de insetos por armadilha (${days} dias)</div>
+      ${rows}
+    </div>
+    <div class="rep-chart-wrap">
+      <div class="rep-chart-title">Gráfico comparativo</div>
+      <div class="rep-canvas-container"><canvas id="repChart3"></canvas></div>
+    </div>`;
+
+  if (typeof Chart !== 'undefined') {
+    _repChart3 = new Chart(document.getElementById('repChart3'), {
+      type: 'bar',
+      data: {
+        labels: dados.map(t => t.nome || t.id),
+        datasets: [{
+          data: dados.map(t => t.totalInsetos),
+          backgroundColor: dados.map(t => t.status==='offline' ? '#6b7280'
+            : t.totalInsetos>=100 ? '#ef4444' : t.totalInsetos>=50 ? '#f97316' : '#4ade80'),
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { family: 'JetBrains Mono', size: 9 }, color: '#6b7e5a' }, grid: { color: 'rgba(74,222,128,.06)' } },
+          y: { ticks: { font: { family: 'JetBrains Mono', size: 9 }, color: '#6b7e5a' } },
+        },
+      },
+    });
+  }
+}
+
+// ── ABA EXPORTAR ─────────────────────────────────────────────
+function repRenderExport(body) {
+  body.innerHTML = `
+    <div class="rep-filters">
+      <select class="rep-select" id="repExpTrap">
+        ${trapList.map(t => `<option value="${t.id}" ${t.id===activeTrapId?'selected':''}>${t.name||t.nome||t.id}</option>`).join('')}
+      </select>
+      <select class="rep-select" id="repExpPeriod">
+        <option value="7">7 dias</option>
+        <option value="30" selected>30 dias</option>
+        <option value="90">90 dias</option>
+      </select>
+    </div>
+
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);line-height:1.8;padding:4px 0">
+      Exporte os dados de capturas da armadilha selecionada no período desejado.
+    </div>
+
+    <div class="rep-export-row">
+      <button class="rep-export-btn csv" onclick="exportCSV()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        EXPORTAR CSV
+      </button>
+      <button class="rep-export-btn pdf" onclick="exportPDF()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        EXPORTAR PDF
+      </button>
+    </div>
+
+    <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);line-height:1.9;padding-top:4px;border-top:1px solid var(--border);margin-top:4px">
+      CSV: abre diretamente no Excel, Google Sheets e LibreOffice.<br>
+      PDF: gera uma prévia de impressão do relatório atual.
+    </div>`;
+}
+
+async function exportCSV() {
+  const trapId = document.getElementById('repExpTrap').value;
+  const days   = parseInt(document.getElementById('repExpPeriod').value);
+  const now    = new Date();
+  const s      = new Date(now); s.setDate(now.getDate() - days);
+  const start  = dateKey(s), end = dateKey(now);
+
+  const data = await API.getReportSummary(trapId, start, end);
+  const trap = trapList.find(t => t.id === trapId);
+
+  const rows = [
+    ['SPYTRAP — Relatório de Capturas'],
+    [`Armadilha: ${data.trap.nome || trapId}`],
+    [`Período: ${start} a ${end}`],
+    [`Gerado em: ${new Date().toLocaleString('pt-BR')}`],
+    [],
+    ['Data', 'Insetos', 'Nível'],
+  ];
+  Object.entries(data.porDia).sort().forEach(([date, total]) => {
+    const nivel = total >= 8 ? 'Alta' : total >= 4 ? 'Média' : 'Baixa';
+    rows.push([date, total, nivel]);
+  });
+  rows.push([]);
+  rows.push(['KPIs']);
+  rows.push(['Total insetos', data.kpis.totalInsetos]);
+  rows.push(['Pico/dia',      data.kpis.picoInsetos]);
+  rows.push(['Capturas',      data.kpis.totalCapturas]);
+  rows.push(['Dias monitorados', data.kpis.diasMonitorados]);
+  rows.push(['Média/dia',    data.kpis.mediaDiaria]);
+  rows.push(['Tendência',    data.kpis.tendencia]);
+
+  const csv  = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `spytrap-${trapId}-${start}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ CSV exportado com sucesso', 'success', 2500);
+}
+
+async function exportPDF() {
+  const trapId = document.getElementById('repExpTrap').value;
+  const days   = parseInt(document.getElementById('repExpPeriod').value);
+  const now    = new Date();
+  const s      = new Date(now); s.setDate(now.getDate() - days);
+
+  const data   = await API.getReportSummary(trapId, dateKey(s), dateKey(now));
+  const { kpis, porDia, trap } = data;
+
+  const trendArrow = kpis.tendencia === 'subindo' ? '↑' : kpis.tendencia === 'caindo' ? '↓' : '→';
+
+  const print = document.getElementById('printReport');
+  print.innerHTML = `
+    <div class="print-header">
+      <div>
+        <div class="print-title">🌱 SPYTRAP — Relatório de Capturas</div>
+        <div style="font-size:12px;color:#555;margin-top:4px">${trap.nome || trapId} · ${dateKey(s)} a ${dateKey(now)}</div>
+      </div>
+      <div style="font-size:11px;color:#888">Gerado: ${new Date().toLocaleString('pt-BR')}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      ${[
+        ['Total insetos', kpis.totalInsetos, '#d97706'],
+        ['Pico/dia',      kpis.picoInsetos,  '#dc2626'],
+        ['Capturas',      kpis.totalCapturas,'#16a34a'],
+        ['Dias ativos',   kpis.diasMonitorados,'#2563eb'],
+      ].map(([lbl,val,color]) => `
+        <div style="border:1px solid #e5e7eb;border-radius:6px;padding:12px;border-top:3px solid ${color}">
+          <div style="font-size:24px;font-weight:700;color:${color}">${val}</div>
+          <div style="font-size:10px;color:#666;margin-top:4px;text-transform:uppercase;letter-spacing:1px">${lbl}</div>
+        </div>`).join('')}
+    </div>
+    <div style="margin-bottom:8px;font-size:12px;color:#555">
+      Tendência: <strong>${trendArrow} ${kpis.tendencia}</strong> · Média diária: <strong>${kpis.mediaDiaria} insetos</strong>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr style="background:#f0fdf4">
+        <th style="padding:6px 8px;text-align:left;border:1px solid #d1fae5">Data</th>
+        <th style="padding:6px 8px;text-align:right;border:1px solid #d1fae5">Insetos</th>
+        <th style="padding:6px 8px;text-align:center;border:1px solid #d1fae5">Nível</th>
+      </tr></thead>
+      <tbody>${Object.entries(porDia).sort().map(([date, total], i) => {
+        const nivel = total >= 8 ? 'Alta' : total >= 4 ? 'Média' : 'Baixa';
+        const c     = total >= 8 ? '#fef2f2' : total >= 4 ? '#fffbeb' : '#f0fdf4';
+        return `<tr style="background:${i%2===0?'#fff':c}">
+          <td style="padding:5px 8px;border:1px solid #e5e7eb">${new Date(date+'T12:00:00').toLocaleDateString('pt-BR')}</td>
+          <td style="padding:5px 8px;text-align:right;font-weight:700;border:1px solid #e5e7eb">${total}</td>
+          <td style="padding:5px 8px;text-align:center;border:1px solid #e5e7eb">${nivel}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+
+  print.style.display = 'block';
+  window.print();
+  print.style.display = 'none';
+}
+
 (async function init() {
   // Verifica autenticação antes de carregar qualquer dado
   const autenticado = await verificarAuth();
@@ -3091,7 +3989,9 @@ function initModalMap() {
   await loadTrapInfo(activeTrapId);
   await loadCalendarMonth(calYear, calMonth);
   await loadDayCaptures(dateKey(TODAY));
-  initNotifications(); // carrega notificações
+  initNotifications();
+  // Mostra painel de relatórios no desktop
+  document.getElementById('main')?.classList.add('show-reports');
 })();
 </script>
 
@@ -3128,5 +4028,7 @@ function initModalMap() {
   </div>
 </div>
 
+
+<div id="printReport" style="display:none"></div>
 </body>
 </html>
