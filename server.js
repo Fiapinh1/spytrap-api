@@ -2,15 +2,15 @@ require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
 
-const authRoutes  = require('./routes/auth');
-const trapsRoutes = require('./routes/traps'); // ← novo
+const authRoutes    = require('./routes/auth');
+const trapsRoutes   = require('./routes/traps');
+const heatmapRoutes = require('./routes/heatmap');   // ← novo
+const reportsRoutes = require('./routes/reports');   // ← novo
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
 // ── CORS ────────────────────────────────────────────────────────────────────
-// Permite que o frontend HTML chame esta API.
-// Em produção, troque FRONTEND_URL para o domínio real (ex: https://meusite.com)
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   credentials: true,
@@ -20,15 +20,15 @@ app.use(cors({
 app.use(express.json());
 
 // ── PING — keep-alive para o Render.com não adormecer ───────────────────────
-// Configure o UptimeRobot para chamar esta rota a cada 14 minutos.
-// URL: https://seu-projeto.onrender.com/ping
 app.get('/ping', (req, res) => {
-  res.json({ status: 'ok', projeto: 'AgroSentinel', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', projeto: 'SPYTRAP', timestamp: new Date().toISOString() });
 });
 
 // ── ROTAS ────────────────────────────────────────────────────────────────────
-app.use('/api/auth',  authRoutes);
-app.use('/api/traps', trapsRoutes); // ← novo
+app.use('/api/auth',    authRoutes);
+app.use('/api/traps',   trapsRoutes);
+app.use('/api/heatmap', heatmapRoutes);  // ← novo
+app.use('/api/reports', reportsRoutes);  // ← novo
 
 // ── 404 ─────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
@@ -43,7 +43,7 @@ app.use((err, req, res, next) => {
 
 // ── START ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🌱 AgroSentinel API rodando na porta ${PORT}`);
+  console.log(`🌱 SPYTRAP API rodando na porta ${PORT}`);
   console.log(`   Supabase: ${process.env.SUPABASE_URL ? '✅ configurado' : '❌ SUPABASE_URL não definido'}`);
   console.log(`   JWT:      ${process.env.JWT_SECRET    ? '✅ configurado' : '❌ JWT_SECRET não definido'}`);
 });
