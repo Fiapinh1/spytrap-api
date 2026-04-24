@@ -2,10 +2,15 @@ require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
 
+<<<<<<< HEAD
 const authRoutes    = require('./routes/auth');
 const trapsRoutes   = require('./routes/traps');
 const heatmapRoutes = require('./routes/heatmap');   // ← novo
 const reportsRoutes = require('./routes/reports');   // ← novo
+=======
+const authRoutes  = require('./routes/auth');
+const trapsRoutes = require('./routes/traps'); // ← novo
+>>>>>>> b094c2f (Atualiza front-end para integração com imagens do Supabase)
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -25,10 +30,15 @@ app.get('/ping', (req, res) => {
 });
 
 // ── ROTAS ────────────────────────────────────────────────────────────────────
+<<<<<<< HEAD
 app.use('/api/auth',    authRoutes);
 app.use('/api/traps',   trapsRoutes);
 app.use('/api/heatmap', heatmapRoutes);  // ← novo
 app.use('/api/reports', reportsRoutes);  // ← novo
+=======
+app.use('/api/auth',  authRoutes);
+app.use('/api/traps', trapsRoutes); // ← novo
+>>>>>>> b094c2f (Atualiza front-end para integração com imagens do Supabase)
 
 // ── 404 ─────────────────────────────────────────────────────────────────────
 app.use((req, res) => {

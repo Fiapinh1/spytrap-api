@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -771,6 +771,11 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
   position:relative; overflow:hidden; margin-bottom:14px;
 }
 .modal-img::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 45% 55%,#1c3a22,#080f08 70%); }
+.modal-real-img {
+  position:relative; z-index:1;
+  width:100%; height:100%; object-fit:cover;
+  display:none;
+}
 .modal-img-txt { position:relative; z-index:1; font-family:var(--font-mono); font-size:10px; color:var(--text-muted); text-align:center; line-height:1.8; }
 .modal-meta { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
 .mmc { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:9px 10px; }
@@ -1221,8 +1226,8 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
       <button class="modal-x" onclick="closeModal('imgModal')">✕</button>
     </div>
     <div class="modal-img">
-      <!-- ── API HOOK: substituir por <img id="modalImg" src=""> quando integrar ── -->
-      <div class="modal-img-txt">[ Imagem real da armadilha ]<br><br>Integrar URL da API aqui</div>
+      <img id="modalRealImage" class="modal-real-img" alt="Imagem da captura">
+      <div class="modal-img-txt" id="modalImgPlaceholder">[ Imagem real da armadilha ]<br><br>Sem imagem disponível</div>
     </div>
     <div class="modal-meta">
       <div class="mmc"><div class="mmc-lbl">Espécie</div><div class="mmc-val" style="font-style:italic;font-size:10px">Diatraea saccharalis</div></div>
@@ -1353,12 +1358,17 @@ const API = {
    *   boundingBoxes: Array<{ x: %, y: % }> — coordenadas em % para overlay
    */
   async getCapturesByDate(trapId, date) {
-    // ── MOCK ──
-    return getMockData(trapId)[date] || [];
-    // ── REAL ──
-    // const res = await fetch(`${this.BASE_URL}/traps/${trapId}/captures?date=${date}`, { headers: this.getHeaders() });
-    // if (!res.ok) throw new Error('Falha ao buscar capturas');
-    // return res.json();
+    try {
+      const res = await fetch(`${this.BASE_URL}/api/traps/${trapId}/captures?date=${date}`, {
+        headers: this.getHeaders(),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      console.warn(`getCapturesByDate(${trapId}, ${date}): usando mock:`, err.message);
+      return getMockData(trapId)[date] || [];
+    }
   },
 
   /**
@@ -1367,20 +1377,25 @@ const API = {
    * Retorno esperado: Array<{ date: 'YYYY-MM-DD', captures: [...] }>
    */
   async getCapturesByRange(trapId, startDate, endDate) {
-    // ── MOCK ──
-    const mockData = getMockData(trapId);
-    const results = [];
-    const start = new Date(startDate + 'T12:00:00');
-    const end   = new Date(endDate   + 'T12:00:00');
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const key = dateKey(d);
-      if (mockData[key]) results.push({ date: key, captures: mockData[key] });
+    try {
+      const res = await fetch(`${this.BASE_URL}/api/traps/${trapId}/captures?startDate=${startDate}&endDate=${endDate}`, {
+        headers: this.getHeaders(),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      console.warn(`getCapturesByRange(${trapId}, ${startDate}, ${endDate}): usando mock:`, err.message);
+      const mockData = getMockData(trapId);
+      const results = [];
+      const start = new Date(startDate + 'T12:00:00');
+      const end   = new Date(endDate   + 'T12:00:00');
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const key = dateKey(d);
+        if (mockData[key]) results.push({ date: key, captures: mockData[key] });
+      }
+      return results;
     }
-    return results;
-    // ── REAL ──
-    // const res = await fetch(`${this.BASE_URL}/traps/${trapId}/captures?startDate=${startDate}&endDate=${endDate}`, { headers: this.getHeaders() });
-    // if (!res.ok) throw new Error('Falha ao buscar período');
-    // return res.json();
   },
 
   /**
@@ -1389,24 +1404,29 @@ const API = {
    * Retorno esperado: Array<{ date: 'YYYY-MM-DD', count, maxLevel }>
    */
   async getCalendarMonth(trapId, year, month) {
-    // ── MOCK ──
-    const mockData = getMockData(trapId);
-    const result = [];
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = new Date(year, month, d);
-      const key  = dateKey(date);
-      if (mockData[key]) {
-        const caps = mockData[key];
-        const maxLevel = caps.some(c => c.level==='high') ? 'high' : caps.some(c => c.level==='med') ? 'med' : 'low';
-        result.push({ date: key, count: caps.length, maxLevel });
+    try {
+      const res = await fetch(`${this.BASE_URL}/api/traps/${trapId}/calendar?year=${year}&month=${month+1}`, {
+        headers: this.getHeaders(),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      console.warn(`getCalendarMonth(${trapId}, ${year}, ${month}): usando mock:`, err.message);
+      const mockData = getMockData(trapId);
+      const result = [];
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(year, month, d);
+        const key  = dateKey(date);
+        if (mockData[key]) {
+          const caps = mockData[key];
+          const maxLevel = caps.some(c => c.level==='high') ? 'high' : caps.some(c => c.level==='med') ? 'med' : 'low';
+          result.push({ date: key, count: caps.length, maxLevel });
+        }
       }
+      return result;
     }
-    return result;
-    // ── REAL ──
-    // const res = await fetch(`${this.BASE_URL}/traps/${trapId}/calendar?year=${year}&month=${month+1}`, { headers: this.getHeaders() });
-    // if (!res.ok) throw new Error('Falha ao buscar calendário');
-    // return res.json();
   },
 
   /**
@@ -2019,6 +2039,18 @@ function renderViewer(dayKey, cap, allCaps, idx) {
     imgEl.style.display = 'none';
   }
 
+  const modalImg = document.getElementById('modalRealImage');
+  const modalPlaceholder = document.getElementById('modalImgPlaceholder');
+  if (cap.imageUrl) {
+    modalImg.src = cap.imageUrl;
+    modalImg.style.display = 'block';
+    modalPlaceholder.style.display = 'none';
+  } else {
+    modalImg.src = '';
+    modalImg.style.display = 'none';
+    modalPlaceholder.style.display = 'block';
+  }
+
   const date = new Date(dayKey + 'T12:00:00');
   document.getElementById('metaDate').textContent  = fmtDate(date);
   document.getElementById('metaTime').textContent  = cap.time;
@@ -2062,6 +2094,22 @@ function clearViewer() {
   document.getElementById('metaLevel').textContent = '—';
   document.getElementById('metaLevel').style.color = '';
   document.getElementById('metaCount').style.color = '';
+
+  const imgEl = document.getElementById('realImage');
+  if (imgEl) {
+    imgEl.src = '';
+    imgEl.style.display = 'none';
+  }
+
+  const modalImg = document.getElementById('modalRealImage');
+  const modalPlaceholder = document.getElementById('modalImgPlaceholder');
+  if (modalImg) {
+    modalImg.src = '';
+    modalImg.style.display = 'none';
+  }
+  if (modalPlaceholder) {
+    modalPlaceholder.style.display = 'block';
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
