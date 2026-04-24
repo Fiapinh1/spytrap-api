@@ -986,7 +986,8 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
   font-family:var(--font-mono); font-size:9px; letter-spacing:1px;
   cursor:pointer; transition:all .15s;
 }
-.mpt.active { background:var(--green-dim); border-color:rgba(74,222,128,.4); color:var(--green); }
+.mpt.active { background:var(--green-dim); border-color:var(--green);
+}
 .map-container { display:none; flex:1; min-height:260px; border-radius:var(--radius-sm); overflow:hidden; border:1px solid var(--border); }
 .map-container.visible { display:block; }
 .leaflet-popup-content-wrapper { background:var(--surface)!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:var(--radius-md)!important; box-shadow:0 4px 20px rgba(0,0,0,.25)!important; font-family:var(--font-ui)!important; font-size:12px!important; padding:0!important; }
@@ -1194,7 +1195,7 @@ body, .header, .panel, .trap-bar, .bottom-nav, .modal-box,
 
 <!-- ══════════════════════════════════════
      BOTTOM NAV (mobile)
-══════════════════════════════════════ -->
+═══════════════════════════════════════ -->
 <nav class="bottom-nav">
   <div class="bn-inner">
     <button class="bn-tab active" id="bnCalendar" onclick="mobileTab('calendar')">
@@ -1818,7 +1819,7 @@ async function renderRangeSummary() {
 
   if (!rangeStart || !rangeEnd) {
     document.getElementById('capturesBadge').textContent = 'Selecione';
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg></div><div class="empty-text">Selecione um intervalo<br>no calendário ou nos campos</div></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg></div><div class="empty-text">Selecione um intervalo<br>no calendário ou nos campos</div></div>`;
     return;
   }
 
@@ -1836,7 +1837,7 @@ async function renderRangeSummary() {
     document.getElementById('capturesBadge').textContent = `${days.length} dias`;
 
     if (!days.length) {
-      container.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg></div><div class="empty-text">Nenhuma captura<br>neste período</div></div>`;
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3L14.5 4z"/><circle cx="12" cy="13" r="3"/></svg></div><div class="empty-text">Nenhuma captura<br>neste período</div></div>`;
       return;
     }
 
@@ -2001,17 +2002,22 @@ function renderViewer(dayKey, cap, allCaps, idx) {
     dots.appendChild(el);
   });
 
-  // API HOOK: exibir imagem real quando imageUrl estiver disponível
-  // if (cap.imageUrl) {
-  //   const imgEl = document.getElementById('realImage') || (() => {
-  //     const img = document.createElement('img');
-  //     img.id = 'realImage';
-  //     img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0';
-  //     document.getElementById('imgFrame').appendChild(img);
-  //     return img;
-  //   })();
-  //   imgEl.src = cap.imageUrl;
-  // }
+  // API HOOK: exibir imagem real se disponível
+  const imgFrame = document.getElementById('imgFrame');
+  let imgEl = document.getElementById('realImage');
+  if (!imgEl) {
+    imgEl = document.createElement('img');
+    imgEl.id = 'realImage';
+    imgEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0';
+    imgFrame.appendChild(imgEl);
+  }
+  if (cap.imageUrl) {
+    imgEl.src = cap.imageUrl;
+    imgEl.style.display = '';
+  } else {
+    imgEl.src = '';
+    imgEl.style.display = 'none';
+  }
 
   const date = new Date(dayKey + 'T12:00:00');
   document.getElementById('metaDate').textContent  = fmtDate(date);
