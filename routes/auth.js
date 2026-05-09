@@ -9,7 +9,7 @@ const router = express.Router();
 // Cria o cliente Supabase com a service key (acesso total, bypassa RLS)
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
 );
 
 // ════════════════════════════════════════════════════════════

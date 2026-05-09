@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const trapsRoutes = require('./routes/traps');
 const heatmapRoutes = require('./routes/heatmap');
 const reportsRoutes = require('./routes/reports');
+const capturasRoutes = require('./routes/capturas');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/traps', trapsRoutes);
 app.use('/api/heatmap', heatmapRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/capturas', capturasRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

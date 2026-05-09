@@ -6,7 +6,7 @@ const router = express.Router();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
 );
 const IMAGE_BUCKET = process.env.SUPABASE_IMAGE_BUCKET || 'armadilha-imagens';
 const APP_TIME_ZONE = 'America/Sao_Paulo';

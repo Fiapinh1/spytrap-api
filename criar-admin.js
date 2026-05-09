@@ -18,7 +18,7 @@ const readline       = require('readline');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
 );
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
