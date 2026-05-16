@@ -17,9 +17,22 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(express.static(__dirname));
 
 app.get('/ping', (req, res) => {
   res.json({ status: 'ok', projeto: 'SPYTRAP', timestamp: new Date().toISOString() });
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
+});
+
+app.get('/login.html', (req, res) => {
+  res.sendFile(__dirname + '/login.html');
+});
+
+app.get('/index.html', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
 });
 
 app.use('/api/auth', authRoutes);
