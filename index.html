@@ -1515,7 +1515,7 @@ const API = {
 
   async getCapturesByRange(trapId, startDate, endDate) {
     try {
-      const res = await fetch(`${this.BASE_URL}/api/traps/${trapId}/capturas?startDate=${startDate}&endDate=${endDate}`, {
+      const res = await fetch(`${this.BASE_URL}/api/traps/${trapId}/captures?startDate=${startDate}&endDate=${endDate}`, {
         headers: this.getHeaders(),
         signal: AbortSignal.timeout(8000),
       });
