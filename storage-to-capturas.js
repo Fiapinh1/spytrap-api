@@ -30,7 +30,9 @@ function parseCaptureDateFromName(fileName) {
   ];
   const hour = time.slice(0, 2);
   const minute = time.slice(2, 4);
-  return new Date(`${year}-${month}-${day}T${hour}:${minute}:00Z`).toISOString();
+  // O nome do arquivo já está no horário local de São Paulo.
+  // Portanto não devemos tratá-lo como UTC, senão o frontend mostrará um horário 3 horas atrás.
+  return new Date(`${year}-${month}-${day}T${hour}:${minute}:00-03:00`).toISOString();
 }
 
 async function main() {
