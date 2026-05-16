@@ -1956,11 +1956,11 @@ function loadDayCaptures(dateKeyStr) {
   const nextDayBtn = document.getElementById('btnNextDay');
   const prevDate = new Date(d);
   prevDate.setDate(prevDate.getDate() - 1);
-  prevDayBtn.disabled = !getMockData(activeTrapId)[dateKey(prevDate)];
+  prevDayBtn.disabled = false; // sempre permitir voltar para o dia anterior
   
   const nextDate = new Date(d);
   nextDate.setDate(nextDate.getDate() + 1);
-  nextDayBtn.disabled = nextDate > TODAY || !getMockData(activeTrapId)[dateKey(nextDate)];
+  nextDayBtn.disabled = nextDate > TODAY; // só bloquear se for dia futuro
   
   API.getCapturesByDate(activeTrapId, dateKeyStr).then(captures => {
     activeDayCaptures = captures;
