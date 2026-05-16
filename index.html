@@ -728,172 +728,6 @@ body::before {
 .rsd-row:hover { background:rgba(22,163,74,.05); }
 
 /* ════════════════════════════════════════
-   IMAGE VIEWER
-════════════════════════════════════════ */
-.viewer-panel { gap:12px; }
-.image-frame {
-  flex:1;
-  min-height:260px;
-  background:linear-gradient(135deg, #f3f6f1 0%, #eef2eb 100%);
-  border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  position:relative;
-  overflow:hidden;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.image-frame:hover { border-color:var(--green); }
-.viewer-img {
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  display:none;
-}
-.img-badges {
-  position:absolute;
-  top:10px;
-  left:10px;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  z-index:2;
-}
-.ib {
-  font-size:11px;
-  font-weight:700;
-  padding:4px 10px;
-  border-radius:6px;
-  border:1px solid;
-  background:rgba(255,255,255,.9);
-  backdrop-filter:blur(8px);
-}
-.ib.count   { color:var(--red); border-color:rgba(220,38,38,.3); }
-.ib.species { color:var(--green); border-color:rgba(22,163,74,.3); }
-.ib.conf    { color:var(--blue); border-color:rgba(37,99,235,.3); }
-.img-hint {
-  position:absolute;
-  bottom:10px;
-  right:10px;
-  z-index:2;
-  font-size:10px;
-  color:var(--text-dim);
-  letter-spacing:1px;
-  text-transform:uppercase;
-  font-weight:600;
-}
-.insect-dot {
-  position:absolute;
-  z-index:1;
-  transform:translate(-50%,-50%);
-  opacity:0;
-  animation:dotIn .4s ease forwards;
-}
-.insect-dot-box {
-  width:20px;
-  height:14px;
-  border:2px solid var(--red);
-  border-radius:2px;
-}
-.img-empty {
-  position:relative;
-  z-index:1;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:10px;
-  opacity:.4;
-}
-.img-empty-icon { font-size:40px; }
-.img-empty-text { font-size:12px; text-align:center; color:var(--text-muted); line-height:1.7; }
-
-.img-meta {
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:8px;
-}
-.imc {
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-radius:var(--radius-sm);
-  padding:10px;
-}
-.imc-lbl {
-  font-size:10px;
-  text-transform:uppercase;
-  letter-spacing:1px;
-  color:var(--text-muted);
-  margin-bottom:3px;
-  font-weight:600;
-}
-.imc-val { font-size:13px; font-weight:700; }
-
-.img-nav {
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-.nav-btn {
-  background:var(--surface2);
-  border:1px solid var(--border);
-  color:var(--text);
-  border-radius:var(--radius-sm);
-  width:40px;
-  height:40px;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex-shrink:0;
-}
-.nav-btn:hover:not(:disabled) {
-  border-color:var(--green);
-  color:var(--green);
-  background:var(--green-dim);
-}
-.nav-btn:active:not(:disabled) { transform:scale(.95); }
-.nav-btn:disabled { opacity:.3; cursor:default; }
-
-.thumb-strip {
-  display:flex;
-  gap:6px;
-  overflow-x:auto;
-  flex:1;
-  padding-bottom:2px;
-}
-.img-thumb {
-  flex-shrink:0;
-  width:64px;
-  height:48px;
-  background:var(--surface3);
-  border:1px solid var(--border);
-  border-radius:var(--radius-sm);
-  cursor:pointer;
-  overflow:hidden;
-  position:relative;
-}
-.img-thumb:hover { border-color:rgba(22,163,74,.5); }
-.img-thumb.active { border-color:var(--green); }
-.img-thumb-img {
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
-.img-thumb-t {
-  position:absolute;
-  bottom:2px;
-  left:0;
-  right:0;
-  text-align:center;
-  font-size:8px;
-  color:white;
-  background:rgba(0,0,0,.6);
-  padding:2px 0;
-  z-index:1;
-}
-
-/* ════════════════════════════════════════
    BOTTOM NAV (mobile)
 ════════════════════════════════════════ */
 .bottom-nav {
@@ -983,7 +817,7 @@ body::before {
 }
 
 /* ════════════════════════════════════════
-   FULLSCREEN IMAGE MODAL
+   FULLSCREEN IMAGE MODAL WITH BOUNDING BOXES
 ════════════════════════════════════════ */
 .fullscreen-modal {
   display:none;
@@ -1029,7 +863,8 @@ body::before {
   backdrop-filter:blur(10px);
 }
 .fullscreen-close:hover { background:rgba(255,255,255,.25); }
-.fullscreen-img-container {
+.fullscreen-img-wrapper {
+  position:relative;
   width:100%;
   height:100%;
   display:flex;
@@ -1041,6 +876,14 @@ body::before {
   max-width:100%;
   max-height:100%;
   object-fit:contain;
+}
+.bounding-box {
+  position:absolute;
+  border:2px solid #dc2626;
+  border-radius:2px;
+  background:rgba(220,38,38,0.15);
+  pointer-events:none;
+  z-index:1;
 }
 .fullscreen-meta {
   position:absolute;
@@ -1195,14 +1038,13 @@ body::before {
     border-top:none;
   }
   .main {
-    grid-template-columns: 320px 1fr 1.5fr;
+    grid-template-columns: 320px 1fr;
     padding:18px 24px 32px;
     gap:16px;
   }
   .panel { display:flex; }
   .bottom-nav { display:none; }
   .toast { bottom:24px; }
-  .img-meta { grid-template-columns:repeat(4,1fr); }
   .logout-btns { flex-direction:row; }
 }
 
@@ -1211,7 +1053,6 @@ body::before {
 ════════════════════════════════════════ */
 @media(min-width:768px) and (max-width:1023px) {
   .main { grid-template-columns: 1fr 1fr; }
-  .viewer-panel { display:none; }
   .bottom-nav { display:none; }
   .toast { bottom:24px; }
 }
@@ -1404,63 +1245,6 @@ body::before {
     </div>
     <div id="captureListContainer" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
   </div>
-
-  <div class="panel viewer-panel" id="panelViewer" data-panel="viewer">
-    <div class="ph">
-      <div class="pt">Visualizador</div>
-      <span class="badge bg" id="viewerBadge">IA Processada</span>
-    </div>
-    <div class="image-frame" id="imgFrame" onclick="openFullscreenModal()">
-      <img class="viewer-img" id="viewerImg" alt="Imagem da captura">
-      <div class="img-badges" id="imgBadges" style="display:none">
-        <span class="ib count"   id="ibCount">—</span>
-        <span class="ib species">Diatraea saccharalis</span>
-        <span class="ib conf"    id="ibConf">—</span>
-      </div>
-      <div id="imgDots"></div>
-      <div class="img-empty" id="imgEmpty">
-        <div class="img-empty-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3L14.5 4z"/>
-            <circle cx="12" cy="13" r="3"/>
-          </svg>
-        </div>
-        <div class="img-empty-text">Selecione uma captura<br>para visualizar</div>
-      </div>
-      <div class="img-hint">Toque para ampliar</div>
-    </div>
-    <div class="img-meta" id="imgMeta" style="opacity:.35">
-      <div class="imc">
-        <div class="imc-lbl">Data</div>
-        <div class="imc-val" id="metaDate">—</div>
-      </div>
-      <div class="imc">
-        <div class="imc-lbl">Horário</div>
-        <div class="imc-val" id="metaTime">—</div>
-      </div>
-      <div class="imc">
-        <div class="imc-lbl">Infestação</div>
-        <div class="imc-val" id="metaLevel">—</div>
-      </div>
-      <div class="imc">
-        <div class="imc-lbl">Insetos</div>
-        <div class="imc-val" id="metaCount">—</div>
-      </div>
-    </div>
-    <div class="img-nav" id="imgNav" style="opacity:.35">
-      <button class="nav-btn" id="btnPrev" onclick="navigateCapture(-1)" disabled>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-      </button>
-      <div class="thumb-strip" id="thumbStrip"></div>
-      <button class="nav-btn" id="btnNext" onclick="navigateCapture(1)" disabled>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
-      </button>
-    </div>
-  </div>
 </div>
 
 <nav class="bottom-nav">
@@ -1489,31 +1273,18 @@ body::before {
       </span>
       <span>Capturas</span>
     </button>
-    <button class="bn-tab" id="bnViewer" onclick="mobileTab('viewer')">
-      <span class="bn-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
-          <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
-          <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
-          <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
-          <circle cx="12" cy="12" r="1"/>
-          <path d="M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0"/>
-        </svg>
-      </span>
-      <span>Imagem</span>
-    </button>
   </div>
 </nav>
 
 <!-- ══════════════════════════════════════
-     FULLSCREEN IMAGE MODAL
+     FULLSCREEN IMAGE MODAL WITH BOUNDING BOXES
 ═══════════════════════════════════════ -->
-<div class="fullscreen-modal" id="fullscreenModal" onclick="closeFullscreenModal()">
+<div class="fullscreen-modal" id="fullscreenModal">
   <div class="fullscreen-header">
     <div class="fullscreen-title" id="fullscreenTitle">—</div>
     <button class="fullscreen-close" onclick="closeFullscreenModal()">✕</button>
   </div>
-  <div class="fullscreen-img-container">
+  <div class="fullscreen-img-wrapper" id="fullscreenImgWrapper">
     <img class="fullscreen-img" id="fullscreenImg" alt="Imagem ampliada">
   </div>
   <div class="fullscreen-meta" id="fullscreenMeta">
@@ -1627,7 +1398,7 @@ const API = {
 
   async getCapturesByRange(trapId, startDate, endDate) {
     try {
-      const res = await fetch(`${this.BASE_URL}/api/traps/${trapId}/captures?startDate=${startDate}&endDate=${endDate}`, {
+      const res = await fetch(`${this.BASE_URL}/api/traps/${trapId}/capturas?startDate=${startDate}&endDate=${endDate}`, {
         headers: this.getHeaders(),
         signal: AbortSignal.timeout(8000),
       });
@@ -1747,16 +1518,18 @@ function buildMockData(seed = 49) {
         confidence: Math.floor(Math.random() * 12) + 85,
         imageUrl: CAPTURE_IMAGES[idx % CAPTURE_IMAGES.length],
         boundingBoxes: Array.from({length: Math.min(cnt, 10)}, () => ({
-          x: Math.floor(Math.random() * 76) + 8,
-          y: Math.floor(Math.random() * 72) + 8,
+          x: Math.random() * 0.7 + 0.15,
+          y: Math.random() * 0.7 + 0.15,
+          width: Math.random() * 0.15 + 0.08,
+          height: Math.random() * 0.15 + 0.08,
         })),
       };
     });
   }
   data[dateKey(TODAY)] = [
-    { id:`${dateKey(TODAY)}-0`, time:'06:20', count:3,  level:'low',  confidence:92, imageUrl:CAPTURE_IMAGES[0], boundingBoxes:[{x:30,y:40},{x:55,y:60},{x:70,y:25}] },
-    { id:`${dateKey(TODAY)}-1`, time:'12:45', count:9,  level:'high', confidence:96, imageUrl:CAPTURE_IMAGES[1], boundingBoxes:[{x:22,y:38},{x:45,y:28},{x:60,y:52},{x:35,y:65},{x:72,y:33},{x:50,y:72},{x:18,y:60},{x:80,y:60},{x:65,y:22}] },
-    { id:`${dateKey(TODAY)}-2`, time:'19:05', count:6,  level:'med',  confidence:89, imageUrl:CAPTURE_IMAGES[0], boundingBoxes:[{x:25,y:35},{x:50,y:55},{x:70,y:40},{x:38,y:70},{x:62,y:25},{x:45,y:80}] },
+    { id:`${dateKey(TODAY)}-0`, time:'06:20', count:3,  level:'low',  confidence:92, imageUrl:CAPTURE_IMAGES[0], boundingBoxes:[{x:0.25,y:0.30,width:0.10,height:0.08},{x:0.50,y:0.55,width:0.10,height:0.08},{x:0.65,y:0.20,width:0.10,height:0.08}] },
+    { id:`${dateKey(TODAY)}-1`, time:'12:45', count:9,  level:'high', confidence:96, imageUrl:CAPTURE_IMAGES[1], boundingBoxes:[{x:0.18,y:0.28,width:0.10,height:0.08},{x:0.40,y:0.22,width:0.10,height:0.08},{x:0.55,y:0.45,width:0.10,height:0.08},{x:0.30,y:0.55,width:0.10,height:0.08},{x:0.68,y:0.28,width:0.10,height:0.08},{x:0.45,y:0.65,width:0.10,height:0.08},{x:0.15,y:0.55,width:0.10,height:0.08},{x:0.75,y:0.55,width:0.10,height:0.08},{x:0.60,y:0.18,width:0.10,height:0.08}] },
+    { id:`${dateKey(TODAY)}-2`, time:'19:05', count:6,  level:'med',  confidence:89, imageUrl:CAPTURE_IMAGES[0], boundingBoxes:[{x:0.20,y:0.30,width:0.10,height:0.08},{x:0.45,y:0.50,width:0.10,height:0.08},{x:0.65,y:0.35,width:0.10,height:0.08},{x:0.35,y:0.65,width:0.10,height:0.08},{x:0.58,y:0.20,width:0.10,height:0.08},{x:0.40,y:0.75,width:0.10,height:0.08}] },
   ];
   return data;
 }
@@ -1811,7 +1584,7 @@ let trapMap = null;
 
 function mobileTab(panel) {
   mobileActivePanel = panel;
-  ['calendar','captures','viewer'].forEach(p => {
+  ['calendar','captures'].forEach(p => {
     const el = document.getElementById(`panel${p.charAt(0).toUpperCase()+p.slice(1)}`);
     const bn = document.getElementById(`bn${p.charAt(0).toUpperCase()+p.slice(1)}`);
     if (window.innerWidth < 1024) {
@@ -1823,12 +1596,12 @@ function mobileTab(panel) {
 
 function syncMobilePanels() {
   if (window.innerWidth < 1024) {
-    ['calendar','captures','viewer'].forEach(p => {
+    ['calendar','captures'].forEach(p => {
       const el = document.getElementById(`panel${p.charAt(0).toUpperCase()+p.slice(1)}`);
       el.classList.toggle('mobile-active', p === mobileActivePanel);
     });
   } else {
-    ['panelCalendar','panelCaptures','panelViewer'].forEach(id => {
+    ['panelCalendar','panelCaptures'].forEach(id => {
       document.getElementById(id).classList.remove('mobile-active');
       document.getElementById(id).style.display = '';
     });
@@ -2048,7 +1821,6 @@ function loadDayCaptures(dateKeyStr) {
         <div class="empty-text">Nenhuma captura<br>registrada neste dia</div>
       `;
       container.appendChild(empty);
-      clearViewer();
       return;
     }
     const list = document.createElement('div');
@@ -2056,7 +1828,7 @@ function loadDayCaptures(dateKeyStr) {
     captures.forEach((cap, idx) => {
       const item = document.createElement('div');
       item.className = 'capture-item';
-      item.onclick = () => selectCapture(idx);
+      item.onclick = () => openFullscreenModalWithCapture(cap, idx);
       item.innerHTML = `
         <div class="cap-thumb">
           <img class="cap-thumb-img" src="${cap.imageUrl}" alt="Preview">
@@ -2074,7 +1846,6 @@ function loadDayCaptures(dateKeyStr) {
       list.appendChild(item);
     });
     container.appendChild(list);
-    selectCapture(0);
   });
 }
 
@@ -2102,7 +1873,6 @@ function renderRangeSummary() {
       <div class="empty-text">Selecione uma data de início<br>e uma data de fim no calendário</div>
     `;
     container.appendChild(empty);
-    clearViewer();
     return;
   }
   API.getCapturesByRange(activeTrapId, rangeStart, rangeEnd).then(results => {
@@ -2136,7 +1906,6 @@ function renderRangeSummary() {
         <div class="empty-text">Nenhuma captura<br>no período selecionado</div>
       `;
       container.appendChild(empty);
-      clearViewer();
       return;
     }
     const list = document.createElement('div');
@@ -2157,7 +1926,7 @@ function renderRangeSummary() {
         </div>
         <div class="rsd-body">
           ${r.captures.map((cap, idx) => `
-            <div class="rsd-row" onclick="selectRangeCapture('${r.date}', ${idx})">
+            <div class="rsd-row" onclick="openFullscreenModalWithCapture(cap, idx)">
               <span>${cap.time} — Captura ${idx + 1}</span>
               <span style="font-weight:700;color:${cap.level==='high'?'var(--red)':cap.level==='med'?'var(--amber)':'var(--green)'}">${cap.count}</span>
             </div>
@@ -2167,9 +1936,6 @@ function renderRangeSummary() {
       list.appendChild(group);
     });
     container.appendChild(list);
-    if (results.length > 0 && results[0].captures.length > 0) {
-      selectRangeCapture(results[0].date, 0);
-    }
   });
 }
 
@@ -2178,118 +1944,54 @@ function selectRangeCapture(dateKeyStr, idx) {
   API.getCapturesByDate(activeTrapId, dateKeyStr).then(captures => {
     activeDayCaptures = captures;
     activeDayIndex = idx;
-    selectCapture(idx);
+    openFullscreenModalWithCapture(captures[idx], idx);
   });
 }
 
-function selectCapture(idx) {
+function openFullscreenModalWithCapture(cap, idx) {
+  activeCapture = cap;
   activeDayIndex = idx;
-  activeCapture = activeDayCaptures[idx];
-  const items = document.querySelectorAll('.capture-item');
-  items.forEach((item, i) => item.classList.toggle('active', i === idx));
-  renderViewer();
-  renderThumbStrip();
-  
-  if (window.innerWidth < 1024) {
-    mobileTab('viewer');
-  }
-}
-
-function renderViewer() {
-  if (!activeCapture) { clearViewer(); return; }
-  const cap = activeCapture;
-  
-  const viewerImg = document.getElementById('viewerImg');
-  if (cap.imageUrl) {
-    viewerImg.src = cap.imageUrl;
-    viewerImg.style.display = 'block';
-  } else {
-    viewerImg.style.display = 'none';
-  }
-  
-  document.getElementById('imgEmpty').style.display = 'none';
-  document.getElementById('imgBadges').style.display = 'flex';
-  document.getElementById('ibCount').textContent = cap.count + (cap.count === 1 ? ' inseto' : ' insetos');
-  document.getElementById('ibConf').textContent = cap.confidence + '%';
-  document.getElementById('imgMeta').style.opacity = '1';
-  document.getElementById('imgNav').style.opacity = '1';
+  const modal = document.getElementById('fullscreenModal');
+  modal.classList.add('open');
   const d = new Date(activeDayKey + 'T12:00:00');
-  document.getElementById('metaDate').textContent = fmtDate(d);
-  document.getElementById('metaTime').textContent = cap.time;
-  document.getElementById('metaLevel').textContent = levelLabel[cap.level];
-  document.getElementById('metaLevel').style.color = levelColor[cap.level];
-  document.getElementById('metaCount').textContent = cap.count;
-  document.getElementById('metaCount').style.color = levelColor[cap.level];
-  const dotsContainer = document.getElementById('imgDots');
-  dotsContainer.innerHTML = '';
+  document.getElementById('fullscreenTitle').textContent = `${DAY_NAMES[d.getDay()]}, ${fmtDate(d)} às ${cap.time}`;
+  document.getElementById('fullscreenCount').textContent = `${cap.count} ${cap.count === 1 ? 'inseto' : 'insetos'}`;
+  document.getElementById('fullscreenConf').textContent = `${cap.confidence}% confiança`;
+  document.getElementById('fullscreenLevel').textContent = levelLabel[cap.level];
+  const img = document.getElementById('fullscreenImg');
+  const imgWrapper = document.getElementById('fullscreenImgWrapper');
+  if (cap.imageUrl) {
+    img.src = cap.imageUrl;
+  }
+  
+  imgWrapper.querySelectorAll('.bounding-box').forEach(el => el.remove());
+  
   if (cap.boundingBoxes) {
-    cap.boundingBoxes.forEach(bb => {
-      const dot = document.createElement('div');
-      dot.className = 'insect-dot';
-      dot.style.left = bb.x + '%';
-      dot.style.top = bb.y + '%';
-      dot.innerHTML = '<div class="insect-dot-box"></div>';
-      dotsContainer.appendChild(dot);
+    cap.boundingBoxes.forEach((bb, i) => {
+      const box = document.createElement('div');
+      box.className = 'bounding-box';
+      box.style.left = (bb.x * 100) + '%';
+      box.style.top = (bb.y * 100) + '%';
+      box.style.width = (bb.width * 100) + '%';
+      box.style.height = (bb.height * 100) + '%';
+      imgWrapper.appendChild(box);
     });
   }
-  document.getElementById('btnPrev').disabled = activeDayIndex === 0;
-  document.getElementById('btnNext').disabled = activeDayIndex === activeDayCaptures.length - 1;
 }
 
-function renderThumbStrip() {
-  const strip = document.getElementById('thumbStrip');
-  strip.innerHTML = '';
-  activeDayCaptures.forEach((cap, idx) => {
-    const thumb = document.createElement('div');
-    thumb.className = 'img-thumb' + (idx === activeDayIndex ? ' active' : '');
-    thumb.onclick = () => selectCapture(idx);
-    thumb.innerHTML = `
-      <img class="img-thumb-img" src="${cap.imageUrl}" alt="Thumb">
-      <div class="img-thumb-t">${cap.time}</div>
-    `;
-    strip.appendChild(thumb);
-  });
+function openFullscreenModal() {
 }
 
-function clearViewer() {
-  activeCapture = null;
-  document.getElementById('viewerImg').style.display = 'none';
-  document.getElementById('imgEmpty').style.display = 'flex';
-  document.getElementById('imgBadges').style.display = 'none';
-  document.getElementById('imgDots').innerHTML = '';
-  document.getElementById('imgMeta').style.opacity = '.35';
-  document.getElementById('imgNav').style.opacity = '.35';
-  document.getElementById('thumbStrip').innerHTML = '';
-  document.getElementById('btnPrev').disabled = true;
-  document.getElementById('btnNext').disabled = true;
+function closeFullscreenModal() {
+  document.getElementById('fullscreenModal').classList.remove('open');
 }
 
-function navigateCapture(dir) {
-  const newIdx = activeDayIndex + dir;
-  if (newIdx >= 0 && newIdx < activeDayCaptures.length) {
-    selectCapture(newIdx);
-  }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
 }
 
-function applyRange() {
-  const s = document.getElementById('rangeStart').value;
-  const e = document.getElementById('rangeEnd').value;
-  if (s && e) {
-    rangeStart = s;
-    rangeEnd = e > s ? e : s;
-    if (rangeEnd < rangeStart) [rangeStart, rangeEnd] = [rangeEnd, rangeStart];
-    loadCalendarMonth(calYear, calMonth);
-    renderRangeSummary();
-  }
-}
-
-function clearRange() {
-  rangeStart = null;
-  rangeEnd = null;
-  document.getElementById('rangeStart').value = '';
-  document.getElementById('rangeEnd').value = '';
-  loadCalendarMonth(calYear, calMonth);
-  renderRangeSummary();
+function handleModalClick(e, id) {
+  if (e.target.id === id) closeModal(id);
 }
 
 function showCalView() {
@@ -2323,31 +2025,25 @@ function updateTrapMap(lat, lng, name, latStr, lngStr) {
   trapMap.setView([lat, lng], 14);
 }
 
-function openFullscreenModal() {
-  if (!activeCapture) return;
-  const modal = document.getElementById('fullscreenModal');
-  modal.classList.add('open');
-  const d = new Date(activeDayKey + 'T12:00:00');
-  document.getElementById('fullscreenTitle').textContent = `${DAY_NAMES[d.getDay()]}, ${fmtDate(d)} às ${activeCapture.time}`;
-  document.getElementById('fullscreenCount').textContent = `${activeCapture.count} ${activeCapture.count === 1 ? 'inseto' : 'insetos'}`;
-  document.getElementById('fullscreenConf').textContent = `${activeCapture.confidence}% confiança`;
-  document.getElementById('fullscreenLevel').textContent = levelLabel[activeCapture.level];
-  const img = document.getElementById('fullscreenImg');
-  if (activeCapture.imageUrl) {
-    img.src = activeCapture.imageUrl;
+function applyRange() {
+  const s = document.getElementById('rangeStart').value;
+  const e = document.getElementById('rangeEnd').value;
+  if (s && e) {
+    rangeStart = s;
+    rangeEnd = e > s ? e : s;
+    if (rangeEnd < rangeStart) [rangeStart, rangeEnd] = [rangeEnd, rangeStart];
+    loadCalendarMonth(calYear, calMonth);
+    renderRangeSummary();
   }
 }
 
-function closeFullscreenModal() {
-  document.getElementById('fullscreenModal').classList.remove('open');
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
-
-function handleModalClick(e, id) {
-  if (e.target.id === id) closeModal(id);
+function clearRange() {
+  rangeStart = null;
+  rangeEnd = null;
+  document.getElementById('rangeStart').value = '';
+  document.getElementById('rangeEnd').value = '';
+  loadCalendarMonth(calYear, calMonth);
+  renderRangeSummary();
 }
 
 function confirmLogout() {
