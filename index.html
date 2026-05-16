@@ -603,9 +603,39 @@ body::before {
   border:1px solid var(--border);
   border-radius:var(--radius-md);
   padding:12px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.day-header-info {
+  display:flex;
+  flex-direction:column;
 }
 .day-header-date { font-size:14px; font-weight:700; }
 .day-header-sub { font-size:11px; color:var(--text-muted); margin-top:3px; }
+.day-nav-btns {
+  display:flex;
+  gap:6px;
+}
+.day-nav-btn {
+  background:var(--surface3);
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:var(--radius-sm);
+  width:36px;
+  height:36px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.day-nav-btn:hover:not(:disabled) {
+  border-color:var(--green);
+  color:var(--green);
+  background:var(--green-dim);
+}
+.day-nav-btn:active:not(:disabled) { transform:scale(.95); }
+.day-nav-btn:disabled { opacity:.3; cursor:default; }
 
 .capture-list {
   display:flex;
@@ -894,18 +924,78 @@ body::before {
   display:flex;
   gap:12px;
   justify-content:center;
+  align-items:center;
   flex-wrap:wrap;
   background:linear-gradient(to top, rgba(0,0,0,.6), transparent);
   z-index:2;
 }
 .fullscreen-meta-item {
-  background:rgba(255,255,255,.15);
   color:white;
-  padding:6px 12px;
-  border-radius:20px;
+  padding:8px 16px;
+  border-radius:24px;
+  font-size:13px;
+  font-weight:700;
+  backdrop-filter:blur(10px);
+}
+.fullscreen-meta-item.count {
+  background:linear-gradient(135deg, rgba(220,38,38,.8), rgba(185,28,28,.8));
+  border:1px solid rgba(255,255,255,.2);
+}
+.fullscreen-meta-item.conf {
+  background:linear-gradient(135deg, rgba(37,99,235,.8), rgba(29,78,216,.8));
+  border:1px solid rgba(255,255,255,.2);
+}
+.fullscreen-meta-item.level {
+  border:1px solid rgba(255,255,255,.2);
+}
+.fullscreen-meta-item.level.high {
+  background:linear-gradient(135deg, rgba(220,38,38,.8), rgba(185,28,28,.8));
+}
+.fullscreen-meta-item.level.med {
+  background:linear-gradient(135deg, rgba(217,119,6,.8), rgba(180,83,9,.8));
+}
+.fullscreen-meta-item.level.low {
+  background:linear-gradient(135deg, rgba(22,163,74,.8), rgba(21,128,61,.8));
+}
+.fullscreen-nav-btns {
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:50%;
+  display:flex;
+  justify-content:space-between;
+  width:100%;
+  padding:0 16px;
+  z-index:3;
+  pointer-events:none;
+}
+.fullscreen-nav-btn {
+  pointer-events:auto;
+  background:rgba(255,255,255,.15);
+  border:none;
+  color:white;
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  backdrop-filter:blur(10px);
+}
+.fullscreen-nav-btn:hover:not(:disabled) { background:rgba(255,255,255,.3); }
+.fullscreen-nav-btn:active:not(:disabled) { transform:scale(.95); }
+.fullscreen-nav-btn:disabled { opacity:.3; cursor:default; }
+.fullscreen-counter {
+  color:white;
   font-size:12px;
   font-weight:600;
+  background:rgba(255,255,255,.15);
+  padding:6px 12px;
+  border-radius:20px;
   backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.2);
 }
 
 /* ════════════════════════════════════════
@@ -1240,8 +1330,22 @@ body::before {
       <span class="badge bg" id="capturesBadge">—</span>
     </div>
     <div class="day-header" id="dayHeader" style="display:none">
-      <div class="day-header-date" id="dayHeaderDate">—</div>
-      <div class="day-header-sub"  id="dayHeaderSub">—</div>
+      <div class="day-header-info">
+        <div class="day-header-date" id="dayHeaderDate">—</div>
+        <div class="day-header-sub"  id="dayHeaderSub">—</div>
+      </div>
+      <div class="day-nav-btns">
+        <button class="day-nav-btn" id="btnPrevDay" onclick="prevDay()" title="Dia anterior">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <button class="day-nav-btn" id="btnNextDay" onclick="nextDay()" title="Próximo dia">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
     </div>
     <div id="captureListContainer" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
   </div>
@@ -1284,13 +1388,26 @@ body::before {
     <div class="fullscreen-title" id="fullscreenTitle">—</div>
     <button class="fullscreen-close" onclick="closeFullscreenModal()">✕</button>
   </div>
+  <div class="fullscreen-nav-btns">
+    <button class="fullscreen-nav-btn" id="btnPrevPhoto" onclick="prevPhoto()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <button class="fullscreen-nav-btn" id="btnNextPhoto" onclick="nextPhoto()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </button>
+  </div>
   <div class="fullscreen-img-wrapper" id="fullscreenImgWrapper">
     <img class="fullscreen-img" id="fullscreenImg" alt="Imagem ampliada">
   </div>
   <div class="fullscreen-meta" id="fullscreenMeta">
-    <div class="fullscreen-meta-item" id="fullscreenCount">— insetos</div>
-    <div class="fullscreen-meta-item" id="fullscreenConf">—% confiança</div>
-    <div class="fullscreen-meta-item" id="fullscreenLevel">—</div>
+    <span class="fullscreen-counter" id="fullscreenCounter">1 / 3</span>
+    <div class="fullscreen-meta-item count" id="fullscreenCount">— insetos</div>
+    <div class="fullscreen-meta-item conf" id="fullscreenConf">—% confiança</div>
+    <div class="fullscreen-meta-item level" id="fullscreenLevel">—</div>
   </div>
 </div>
 
@@ -1710,6 +1827,35 @@ function nextMonth() {
   loadCalendarMonth(calYear, calMonth);
 }
 
+function prevDay() {
+  const d = new Date(selectedDay + 'T12:00:00');
+  d.setDate(d.getDate() - 1);
+  selectedDay = dateKey(d);
+  loadDayCaptures(selectedDay);
+  loadCalendarMonth(calYear, calMonth);
+}
+function nextDay() {
+  const d = new Date(selectedDay + 'T12:00:00');
+  d.setDate(d.getDate() + 1);
+  if (d > TODAY) return;
+  selectedDay = dateKey(d);
+  loadDayCaptures(selectedDay);
+  loadCalendarMonth(calYear, calMonth);
+}
+
+function prevPhoto() {
+  if (activeDayIndex > 0) {
+    activeDayIndex--;
+    openFullscreenModalWithCapture(activeDayCaptures[activeDayIndex], activeDayIndex);
+  }
+}
+function nextPhoto() {
+  if (activeDayIndex < activeDayCaptures.length - 1) {
+    activeDayIndex++;
+    openFullscreenModalWithCapture(activeDayCaptures[activeDayIndex], activeDayIndex);
+  }
+}
+
 async function loadCalendarMonth(year, month) {
   document.getElementById('calMonth').textContent = `${MONTHS_PT[month]} ${year}`;
   try {
@@ -1801,10 +1947,21 @@ function loadDayCaptures(dateKeyStr) {
   const capturesTitle = document.getElementById('capturesTitle');
   const capturesBadge = document.getElementById('capturesBadge');
   const d = new Date(dateKeyStr + 'T12:00:00');
-  dayHeader.style.display = 'block';
+  dayHeader.style.display = 'flex';
   document.getElementById('dayHeaderDate').textContent = DAY_NAMES[d.getDay()] + ', ' + fmtDate(d);
   document.getElementById('dayHeaderSub').textContent = MONTHS_FULL[d.getMonth()] + ' de ' + d.getFullYear();
   capturesTitle.textContent = 'Capturas do Dia';
+  
+  const prevDayBtn = document.getElementById('btnPrevDay');
+  const nextDayBtn = document.getElementById('btnNextDay');
+  const prevDate = new Date(d);
+  prevDate.setDate(prevDate.getDate() - 1);
+  prevDayBtn.disabled = !getMockData(activeTrapId)[dateKey(prevDate)];
+  
+  const nextDate = new Date(d);
+  nextDate.setDate(nextDate.getDate() + 1);
+  nextDayBtn.disabled = nextDate > TODAY || !getMockData(activeTrapId)[dateKey(nextDate)];
+  
   API.getCapturesByDate(activeTrapId, dateKeyStr).then(captures => {
     activeDayCaptures = captures;
     capturesBadge.textContent = captures.length + (captures.length === 1 ? ' captura' : ' capturas');
@@ -1926,7 +2083,7 @@ function renderRangeSummary() {
         </div>
         <div class="rsd-body">
           ${r.captures.map((cap, idx) => `
-            <div class="rsd-row" onclick="openFullscreenModalWithCapture(cap, idx)">
+            <div class="rsd-row" onclick="selectRangeCapture('${r.date}', ${idx})">
               <span>${cap.time} — Captura ${idx + 1}</span>
               <span style="font-weight:700;color:${cap.level==='high'?'var(--red)':cap.level==='med'?'var(--amber)':'var(--green)'}">${cap.count}</span>
             </div>
@@ -1957,7 +2114,19 @@ function openFullscreenModalWithCapture(cap, idx) {
   document.getElementById('fullscreenTitle').textContent = `${DAY_NAMES[d.getDay()]}, ${fmtDate(d)} às ${cap.time}`;
   document.getElementById('fullscreenCount').textContent = `${cap.count} ${cap.count === 1 ? 'inseto' : 'insetos'}`;
   document.getElementById('fullscreenConf').textContent = `${cap.confidence}% confiança`;
-  document.getElementById('fullscreenLevel').textContent = levelLabel[cap.level];
+  
+  const levelEl = document.getElementById('fullscreenLevel');
+  levelEl.textContent = levelLabel[cap.level];
+  levelEl.className = 'fullscreen-meta-item level ' + cap.level;
+  
+  const counterEl = document.getElementById('fullscreenCounter');
+  counterEl.textContent = `${idx + 1} / ${activeDayCaptures.length}`;
+  
+  const prevBtn = document.getElementById('btnPrevPhoto');
+  const nextBtn = document.getElementById('btnNextPhoto');
+  prevBtn.disabled = idx === 0;
+  nextBtn.disabled = idx === activeDayCaptures.length - 1;
+  
   const img = document.getElementById('fullscreenImg');
   const imgWrapper = document.getElementById('fullscreenImgWrapper');
   if (cap.imageUrl) {
