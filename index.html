@@ -1960,7 +1960,7 @@ function loadDayCaptures(dateKeyStr) {
   
   const nextDate = new Date(d);
   nextDate.setDate(nextDate.getDate() + 1);
-  nextDayBtn.disabled = nextDate > TODAY; // só bloquear se for dia futuro
+  nextDayBtn.disabled = dateKey(nextDate) > dateKey(TODAY); // compara apenas data, sem horário
   
   API.getCapturesByDate(activeTrapId, dateKeyStr).then(captures => {
     activeDayCaptures = captures;
@@ -2203,6 +2203,7 @@ function applyRange() {
     if (rangeEnd < rangeStart) [rangeStart, rangeEnd] = [rangeEnd, rangeStart];
     loadCalendarMonth(calYear, calMonth);
     renderRangeSummary();
+    mobileTab('captures');
   }
 }
 
