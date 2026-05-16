@@ -116,9 +116,13 @@ function faixaUtcDoDiaLocal(dateKey) {
 
 function formatarCaptura(row) {
   const data = new Date(row.capturada_em);
+  const rawTime = typeof row.capturada_em === 'string'
+    ? String(row.capturada_em).slice(11, 16)
+    : null;
+
   return {
     id: row.id,
-    time: data.toLocaleTimeString('pt-BR', {
+    time: rawTime || data.toLocaleTimeString('pt-BR', {
       hour: '2-digit',
       minute: '2-digit',
       timeZone: 'America/Sao_Paulo',
