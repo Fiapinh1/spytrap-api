@@ -506,6 +506,18 @@ body::before {
   color:var(--green);
   font-weight:800;
 }
+.cal-day.severity-high:not(.selected):not(.range-start):not(.range-end) {
+  border-color:rgba(220,38,38,.55);
+  background:rgba(220,38,38,.10);
+  color:var(--red);
+  font-weight:800;
+}
+.cal-day.severity-med:not(.selected):not(.range-start):not(.range-end) {
+  border-color:rgba(217,119,6,.50);
+  background:rgba(217,119,6,.10);
+  color:var(--amber);
+  font-weight:750;
+}
 .cal-grid.range-mode .cal-day.has-data:not(.range-start):not(.range-end):not(.in-range) {
   background:transparent;
 }
@@ -521,14 +533,14 @@ body::before {
   font-weight:800;
   box-shadow:0 8px 18px rgba(22,163,74,.22);
 }
-.cal-day.has-data:not(.selected):not(.range-start):not(.range-end) {
+.cal-day.has-data:not(.selected):not(.range-start):not(.range-end):not(.severity-high):not(.severity-med) {
   background:rgba(22,163,74,.04);
 }
 
 .cal-dots { display:flex; gap:3px; align-items:center; height:4px; }
 .cal-dot { width:4px; height:4px; border-radius:50%; }
-.cal-dot.high { background:var(--red); }
-.cal-dot.med  { background:var(--amber); }
+.cal-dot.high { width:6px; height:6px; background:var(--red); box-shadow:0 0 0 3px rgba(220,38,38,.12); }
+.cal-dot.med  { width:5px; height:5px; background:var(--amber); box-shadow:0 0 0 3px rgba(217,119,6,.12); }
 .cal-dot.low  { background:var(--green); }
 
 .range-controls {
@@ -651,6 +663,51 @@ body::before {
 }
 .day-nav-btn:active:not(:disabled) { transform:scale(.95); }
 .day-nav-btn:disabled { opacity:.3; cursor:default; }
+
+.infestation-alert {
+  border-radius:var(--radius-md);
+  border:1px solid;
+  padding:12px;
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+}
+.infestation-alert.high {
+  color:var(--red);
+  border-color:rgba(220,38,38,.35);
+  background:rgba(220,38,38,.09);
+}
+.infestation-alert.med {
+  color:var(--amber);
+  border-color:rgba(217,119,6,.35);
+  background:rgba(217,119,6,.10);
+}
+.alert-icon {
+  width:32px;
+  height:32px;
+  border-radius:var(--radius-sm);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  background:rgba(255,255,255,.55);
+  border:1px solid currentColor;
+}
+.alert-body { min-width:0; }
+.alert-title {
+  font-size:12px;
+  line-height:1.2;
+  letter-spacing:.8px;
+  text-transform:uppercase;
+  font-weight:800;
+}
+.alert-text {
+  margin-top:4px;
+  color:var(--text);
+  font-size:12px;
+  line-height:1.45;
+  font-weight:600;
+}
 
 .capture-list {
   display:flex;
@@ -1610,6 +1667,8 @@ const chipStyle   = (l) => l==='high'
   ? 'color:var(--amber);border-color:rgba(217,119,6,.3);background:var(--amber-dim)'
   : 'color:var(--green);border-color:rgba(22,163,74,.3);background:var(--green-dim)';
 
+const severityRank = { low: 1, med: 2, high: 3 };
+
 function normalizeRangeDates(start, end) {
   if (!start || !end) return { start, end };
   return start <= end
@@ -1866,6 +1925,8 @@ function renderCalendar() {
     if (isRangeStart) classes += ' range-start';
     if (isRangeEnd) classes += ' range-end';
     if (hasData) classes += ' has-data';
+    if (hasData && calendarData[key].maxLevel === 'high') classes += ' severity-high';
+    if (hasData && calendarData[key].maxLevel === 'med') classes += ' severity-med';
     dEl.className = classes;
     const num = document.createElement('div');
     num.className = 'cal-day-num';
@@ -1939,6 +2000,13 @@ function loadDayCaptures(dateKeyStr) {
   API.getCapturesByDate(activeTrapId, dateKeyStr).then(captures => {
     activeDayCaptures = captures;
     capturesBadge.textContent = captures.length + (captures.length === 1 ? ' captura' : ' capturas');
+    const totalInsects = captures.reduce((sum, cap) => sum + (Number(cap.count) || 0), 0);
+    const maxLevel = captures.reduce((level, cap) => {
+      return (severityRank[cap.level] || 0) > (severityRank[level] || 0) ? cap.level : level;
+    }, 'low');
+    if (captures.length > 0 && (maxLevel === 'high' || maxLevel === 'med')) {
+      container.appendChild(createInfestationAlert(maxLevel, totalInsects, captures.length));
+    }
     if (captures.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'empty-state';
@@ -1978,6 +2046,28 @@ function loadDayCaptures(dateKeyStr) {
     });
     container.appendChild(list);
   });
+}
+
+function createInfestationAlert(level, totalInsects, captureCount) {
+  const alert = document.createElement('div');
+  alert.className = `infestation-alert ${level}`;
+  const isHigh = level === 'high';
+  alert.innerHTML = `
+    <div class="alert-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+        <path d="M12 9v4"/>
+        <path d="M12 17h.01"/>
+      </svg>
+    </div>
+    <div class="alert-body">
+      <div class="alert-title">${isHigh ? 'Alerta de infestação' : 'Atenção: pressão de praga'}</div>
+      <div class="alert-text">
+        ${totalInsects} ${totalInsects === 1 ? 'inseto detectado' : 'insetos detectados'} em ${captureCount} ${captureCount === 1 ? 'captura' : 'capturas'} neste dia. ${isHigh ? 'Priorize vistoria na área.' : 'Acompanhe a evolução nas próximas capturas.'}
+      </div>
+    </div>
+  `;
+  return alert;
 }
 
 function renderRangeSummary() {
