@@ -2,6 +2,20 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
+const requiredEnv = [
+  'SUPABASE_URL',
+  'JWT_SECRET',
+];
+
+const hasSupabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const missingEnv = requiredEnv.filter((key) => !process.env[key]);
+if (!hasSupabaseKey) missingEnv.push('SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_SERVICE_KEY');
+
+if (missingEnv.length > 0) {
+  console.error(`Configuracao incompleta. Variaveis ausentes: ${missingEnv.join(', ')}`);
+  process.exit(1);
+}
+
 const authRoutes = require('./routes/auth');
 const trapsRoutes = require('./routes/traps');
 const heatmapRoutes = require('./routes/heatmap');
@@ -17,14 +31,14 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static(__dirname, { index: false }));
 
 app.get('/ping', (req, res) => {
   res.json({ status: 'ok', projeto: 'SPYTRAP', timestamp: new Date().toISOString() });
 });
 
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
+  res.redirect('/login.html');
 });
 
 app.get('/login.html', (req, res) => {

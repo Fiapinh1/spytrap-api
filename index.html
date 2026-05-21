@@ -1433,11 +1433,6 @@ body::before {
 </div>
 
 <script>
-const CAPTURE_IMAGES = [
-  'capturas-img/23042026-1945-0003.jpeg',
-  'capturas-img/a57353fa-5c6c-4faa-94be-35eea99b8f61.jpeg'
-];
-
 const API = {
   BASE_URL: (() => {
     const RENDER_API_URL = 'https://spytrap-api.onrender.com';
@@ -1448,122 +1443,98 @@ const API = {
     return window.location.origin;
   })(),
 
+  getToken() {
+    return localStorage.getItem('agrosentinel_token')
+        || sessionStorage.getItem('agrosentinel_token');
+  },
+
   getHeaders() {
-    const token = localStorage.getItem('agrosentinel_token')
-                || sessionStorage.getItem('agrosentinel_token');
+    const token = this.getToken();
     return {
       'Content-Type':  'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     };
   },
 
-  async getTrapList() {
-    try {
-      const res = await fetch(`${this.BASE_URL}/api/traps`, {
-        headers: this.getHeaders(),
-        signal:  AbortSignal.timeout(8000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const lista = await res.json();
-      if (Array.isArray(lista) && lista.length > 0) return lista;
-      if (Array.isArray(lista) && lista.length === 0) return [];
-      throw new Error('Resposta inválida da API');
-    } catch (err) {
-      console.warn('getTrapList: usando mock (API indisponível):', err.message);
-      return MOCK_TRAPS;
+  clearSession() {
+    localStorage.removeItem('agrosentinel_token');
+    localStorage.removeItem('agrosentinel_user');
+    sessionStorage.removeItem('agrosentinel_token');
+    sessionStorage.removeItem('agrosentinel_user');
+  },
+
+  redirectToLogin() {
+    this.clearSession();
+    window.location.replace('login.html');
+  },
+
+  async request(path, options = {}) {
+    if (!this.getToken()) {
+      this.redirectToLogin();
+      throw new Error('Sessão ausente.');
     }
+
+    let res;
+    try {
+      res = await fetch(`${this.BASE_URL}${path}`, {
+        ...options,
+        headers: {
+          ...this.getHeaders(),
+          ...(options.headers || {}),
+        },
+        signal: options.signal || AbortSignal.timeout(8000),
+      });
+    } catch (err) {
+      this.redirectToLogin();
+      throw err;
+    }
+
+    if (res.status === 401 || res.status === 403) {
+      this.redirectToLogin();
+      throw new Error('Sessão inválida ou expirada.');
+    }
+
+    if (!res.ok) {
+      let message = `HTTP ${res.status}`;
+      try {
+        const data = await res.json();
+        message = data.message || message;
+      } catch { }
+      this.redirectToLogin();
+      throw new Error(message);
+    }
+
+    return res.json();
+  },
+
+  async validateSession() {
+    return this.request('/api/auth/me');
+  },
+
+  async getTrapList() {
+    const lista = await this.request('/api/traps');
+    if (!Array.isArray(lista)) throw new Error('Resposta inválida da API');
+    return lista;
   },
 
   async getTrapInfo(trapId) {
-    try {
-      const res = await fetch(`${this.BASE_URL}/api/traps/${trapId}`, {
-        headers: this.getHeaders(),
-        signal:  AbortSignal.timeout(8000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
-    } catch (err) {
-      console.warn(`getTrapInfo(${trapId}): usando mock:`, err.message);
-      const trap = MOCK_TRAPS.find(t => t.id === trapId) || MOCK_TRAPS[0];
-      const STATS = {
-        'SPY-01': { monthTotal: 63, peakDay: 18, monthCaptures: 21 },
-        'SPY-02': { monthTotal: 47, peakDay: 12, monthCaptures: 16 },
-        'SPY-03': { monthTotal: 0,  peakDay: 0,  monthCaptures: 0  },
-      };
-      const stats = STATS[trapId] || { monthTotal: 0, peakDay: 0, monthCaptures: 0 };
-      return {
-        ...trap,
-        lastCapture: trap.status === 'online' ? 'Hoje às 19:00' : 'Sem sinal',
-        ...stats,
-      };
-    }
+    return this.request(`/api/traps/${trapId}`);
   },
 
   async getCapturesByDate(trapId, date) {
-    try {
-      const res = await fetch(`${this.BASE_URL}/api/traps/${trapId}/captures?date=${date}`, {
-        headers: this.getHeaders(),
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
-    } catch (err) {
-      console.warn(`getCapturesByDate(${trapId}, ${date}): usando mock:`, err.message);
-      return getMockData(trapId)[date] || [];
-    }
+    return this.request(`/api/traps/${trapId}/captures?date=${date}`);
   },
 
   async getCapturesByRange(trapId, startDate, endDate) {
-    try {
-      const res = await fetch(`${this.BASE_URL}/api/traps/${trapId}/captures?startDate=${startDate}&endDate=${endDate}`, {
-        headers: this.getHeaders(),
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
-    } catch (err) {
-      console.warn(`getCapturesByRange(${trapId}, ${startDate}, ${endDate}): usando mock:`, err.message);
-      const mockData = getMockData(trapId);
-      const results = [];
-      const start = new Date(startDate + 'T12:00:00');
-      const end   = new Date(endDate   + 'T12:00:00');
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const key = dateKey(d);
-        if (mockData[key]) results.push({ date: key, captures: mockData[key] });
-      }
-      return results;
-    }
+    return this.request(`/api/traps/${trapId}/captures?startDate=${startDate}&endDate=${endDate}`);
   },
 
   async getCalendarMonth(trapId, year, month) {
-    try {
-      const res = await fetch(`${this.BASE_URL}/api/traps/${trapId}/calendar?year=${year}&month=${month+1}`, {
-        headers: this.getHeaders(),
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
-    } catch (err) {
-      console.warn(`getCalendarMonth(${trapId}, ${year}, ${month}): usando mock:`, err.message);
-      const mockData = getMockData(trapId);
-      const result = [];
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      for (let d = 1; d <= daysInMonth; d++) {
-        const date = new Date(year, month, d);
-        const key  = dateKey(date);
-        if (mockData[key]) {
-          const caps = mockData[key];
-          const maxLevel = caps.some(c => c.level==='high') ? 'high' : caps.some(c => c.level==='med') ? 'med' : 'low';
-          result.push({ date: key, count: caps.length, maxLevel });
-        }
-      }
-      return result;
-    }
+    return this.request(`/api/traps/${trapId}/calendar?year=${year}&month=${month+1}`);
   },
 
   async logout() {
-    const token = localStorage.getItem('agrosentinel_token')
-               || sessionStorage.getItem('agrosentinel_token');
+    const token = this.getToken();
     if (token) {
       try {
         await fetch(`${this.BASE_URL}/api/auth/logout`, {
@@ -1572,84 +1543,12 @@ const API = {
         });
       } catch { }
     }
-    localStorage.removeItem('agrosentinel_token');
-    localStorage.removeItem('agrosentinel_user');
-    sessionStorage.removeItem('agrosentinel_token');
-    sessionStorage.removeItem('agrosentinel_user');
-    window.location.href = 'login.html';
+    this.redirectToLogin();
   },
 };
 
-const MOCK_TRAPS = [
-  {
-    id: 'SPY-01',
-    name: 'SPYTRAP 01',
-    lat: "19°27'12\"S", lng: "47°58'44\"W",
-    latDec: -19.4533, lngDec: -47.9789,
-    status: 'online',
-  },
-  {
-    id: 'SPY-02',
-    name: 'SPYTRAP 02',
-    lat: "19°28'05\"S", lng: "47°57'30\"W",
-    latDec: -19.4681, lngDec: -47.9583,
-    status: 'online',
-  },
-  {
-    id: 'SPY-03',
-    name: 'SPYTRAP 03',
-    lat: "19°26'50\"S", lng: "47°59'10\"W",
-    latDec: -19.4472, lngDec: -47.9861,
-    status: 'offline',
-  },
-];
-
 const TODAY = new Date();
 TODAY.setHours(0,0,0,0);
-const MOCK_CACHE = {};
-
-function getMockData(trapId) {
-  if (MOCK_CACHE[trapId]) return MOCK_CACHE[trapId];
-  const seed = trapId.charCodeAt(trapId.length - 1);
-  MOCK_CACHE[trapId] = buildMockData(seed);
-  return MOCK_CACHE[trapId];
-}
-
-function buildMockData(seed = 49) {
-  const data = {};
-  const hours = ['06:20','07:15','12:45','14:30','19:05'];
-  const levelOf = n => n >= 8 ? 'high' : n >= 4 ? 'med' : 'low';
-  for (let i = 0; i <= 35; i++) {
-    const d = new Date(TODAY); d.setDate(TODAY.getDate() - i);
-    const key = dateKey(d);
-    if (Math.random() < 0.08) continue;
-    const num = Math.floor(Math.random() * 3) + 3;
-    const chosen = [...hours].sort(() => Math.random() - .5).slice(0, num).sort();
-    data[key] = chosen.map((t, idx) => {
-      const cnt = Math.floor(Math.random() * 14) + 1;
-      return {
-        id: `${key}-${idx}`,
-        time: t,
-        count: cnt,
-        level: levelOf(cnt),
-        confidence: Math.floor(Math.random() * 12) + 85,
-        imageUrl: CAPTURE_IMAGES[idx % CAPTURE_IMAGES.length],
-        boundingBoxes: Array.from({length: Math.min(cnt, 10)}, () => ({
-          x: Math.random() * 0.7 + 0.15,
-          y: Math.random() * 0.7 + 0.15,
-          width: Math.random() * 0.15 + 0.08,
-          height: Math.random() * 0.15 + 0.08,
-        })),
-      };
-    });
-  }
-  data[dateKey(TODAY)] = [
-    { id:`${dateKey(TODAY)}-0`, time:'06:20', count:3,  level:'low',  confidence:92, imageUrl:CAPTURE_IMAGES[0], boundingBoxes:[{x:0.25,y:0.30,width:0.10,height:0.08},{x:0.50,y:0.55,width:0.10,height:0.08},{x:0.65,y:0.20,width:0.10,height:0.08}] },
-    { id:`${dateKey(TODAY)}-1`, time:'12:45', count:9,  level:'high', confidence:96, imageUrl:CAPTURE_IMAGES[1], boundingBoxes:[{x:0.18,y:0.28,width:0.10,height:0.08},{x:0.40,y:0.22,width:0.10,height:0.08},{x:0.55,y:0.45,width:0.10,height:0.08},{x:0.30,y:0.55,width:0.10,height:0.08},{x:0.68,y:0.28,width:0.10,height:0.08},{x:0.45,y:0.65,width:0.10,height:0.08},{x:0.15,y:0.55,width:0.10,height:0.08},{x:0.75,y:0.55,width:0.10,height:0.08},{x:0.60,y:0.18,width:0.10,height:0.08}] },
-    { id:`${dateKey(TODAY)}-2`, time:'19:05', count:6,  level:'med',  confidence:89, imageUrl:CAPTURE_IMAGES[0], boundingBoxes:[{x:0.20,y:0.30,width:0.10,height:0.08},{x:0.45,y:0.50,width:0.10,height:0.08},{x:0.65,y:0.35,width:0.10,height:0.08},{x:0.35,y:0.65,width:0.10,height:0.08},{x:0.58,y:0.20,width:0.10,height:0.08},{x:0.40,y:0.75,width:0.10,height:0.08}] },
-  ];
-  return data;
-}
 
 function dateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -2226,6 +2125,7 @@ async function doLogout() {
 
 (async function init() {
   try {
+    await API.validateSession();
     trapList = await API.getTrapList();
     if (trapList.length === 0) {
       showToast('Nenhuma armadilha encontrada', 'error');

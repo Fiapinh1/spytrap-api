@@ -731,7 +731,13 @@ body::before {
 </div>
 
 <script>
-const API_BASE_URL = 'https://spytrap-api.onrender.com';
+const API_BASE_URL = (() => {
+  const RENDER_API_URL = 'https://spytrap-api.onrender.com';
+  const isGithubPages = window.location.hostname.includes('github.io');
+  const isLocalFile = window.location.protocol === 'file:';
+  if (isGithubPages || isLocalFile) return RENDER_API_URL;
+  return window.location.origin;
+})();
 
 const AUTH = {
   async login(email, password, remember) {
