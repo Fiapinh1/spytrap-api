@@ -109,15 +109,15 @@ body::before {
   align-items:center;
   justify-content:space-between;
   padding:0 14px;
-  background:rgba(248,250,247,.98);
-  border-bottom:1px solid var(--border);
+  background:var(--green);
+  border-bottom:1px solid rgba(255,255,255,.18);
   backdrop-filter:blur(16px);
-  box-shadow:0 2px 12px rgba(0,0,0,0.06);
+  box-shadow:0 2px 14px rgba(22,163,74,.25);
 }
 
-.logo { display:flex; align-items:center; gap:10px; min-width:0; text-decoration:none; color:var(--text); }
+.logo { display:flex; align-items:center; gap:10px; min-width:0; text-decoration:none; color:var(--text-invert); }
 .logo:focus-visible {
-  outline:2px solid var(--green);
+  outline:2px solid var(--text-invert);
   outline-offset:4px;
   border-radius:var(--radius-sm);
 }
@@ -135,10 +135,10 @@ body::before {
   letter-spacing:-.5px;
   line-height:1;
 }
-.brand-name span { color:var(--green); }
+.brand-name span { color:var(--text-invert); }
 .brand-sub {
   font-size:9px;
-  color:var(--text-muted);
+  color:rgba(255,255,255,.82);
   letter-spacing:1.8px;
   text-transform:uppercase;
   margin-top:5px;
@@ -157,15 +157,15 @@ body::before {
   gap:6px;
   font-size:11px;
   color:var(--green);
-  background:var(--green-dim);
-  border:1px solid rgba(22,163,74,.3);
+  background:rgba(255,255,255,.94);
+  border:1px solid rgba(255,255,255,.45);
   padding:4px 9px;
   border-radius:20px;
 }
 .status-badge.offline {
   color:var(--red);
-  background:var(--red-dim);
-  border-color:rgba(220,38,38,.3);
+  background:rgba(255,255,255,.94);
+  border-color:rgba(255,255,255,.45);
 }
 .status-dot {
   width:6px;
@@ -181,7 +181,7 @@ body::before {
 
 .clock-badge {
   font-size:11px;
-  color:var(--text-muted);
+  color:rgba(255,255,255,.82);
   display:none;
 }
 
@@ -189,9 +189,9 @@ body::before {
   display:flex;
   align-items:center;
   gap:6px;
-  background:rgba(220,38,38,0.08);
-  border:1px solid rgba(220,38,38,.3);
-  color:var(--red);
+  background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.36);
+  color:var(--text-invert);
   border-radius:var(--radius-sm);
   font-size:11px;
   letter-spacing:.3px;
@@ -200,8 +200,8 @@ body::before {
   font-weight:600;
 }
 .btn-logout:hover {
-  background:rgba(220,38,38,.12);
-  border-color:rgba(220,38,38,.5);
+  background:rgba(255,255,255,.22);
+  border-color:rgba(255,255,255,.58);
 }
 .btn-logout-text { display:none; }
 
@@ -852,10 +852,10 @@ body::before {
   right:0;
   z-index:55;
   height:var(--bottom-nav-h);
-  background:rgba(248,250,247,.98);
-  border-top:1px solid var(--border);
+  background:var(--green);
+  border-top:1px solid rgba(255,255,255,.18);
   backdrop-filter:blur(16px);
-  box-shadow:0 -1px 12px rgba(0,0,0,0.06);
+  box-shadow:0 -2px 14px rgba(22,163,74,.22);
   display:flex;
 }
 .bn-inner { display:flex; height:100%; width:100%; }
@@ -869,7 +869,7 @@ body::before {
   cursor:pointer;
   border:none;
   background:none;
-  color:var(--text-muted);
+  color:rgba(255,255,255,.72);
   font-size:10px;
   letter-spacing:.6px;
   text-transform:uppercase;
@@ -877,13 +877,19 @@ body::before {
   padding:6px;
   position:relative;
 }
-.bn-tab.active { color:var(--green); }
+.bn-tab.active { color:var(--text-invert); }
+.bn-tab.active .bn-icon {
+  background:rgba(255,255,255,.16);
+  border-color:rgba(255,255,255,.34);
+}
 .bn-icon {
   display:flex;
   align-items:center;
   justify-content:center;
   width:30px;
   height:30px;
+  border:1px solid transparent;
+  border-radius:var(--radius-sm);
 }
 
 /* ════════════════════════════════════════
@@ -1274,7 +1280,7 @@ body::before {
 ═══════════════════════════════════════ -->
 <header class="header">
   <a class="logo" href="index.html" aria-label="Ir para a página inicial">
-    <img class="brand-mark" src="Logos/logo_preta.png" alt="">
+    <img class="brand-mark" src="Logos/logo_branca.png" alt="">
     <span>
       <span class="brand-name">SPY<span>TRAP</span></span>
       <span class="brand-sub">Sistema de monitoramento de pragas</span>
