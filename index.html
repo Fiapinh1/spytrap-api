@@ -115,30 +115,14 @@ body::before {
   box-shadow:0 2px 12px rgba(0,0,0,0.06);
 }
 
-.logo { display:flex; align-items:center; gap:10px; }
-.logo-icon {
-  width:34px;
-  height:34px;
-  flex-shrink:0;
-  background:var(--green-dim);
-  border:1px solid rgba(22,163,74,.4);
-  border-radius:10px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.logo-name {
-  font-size:17px;
-  font-weight:800;
-  letter-spacing:-.5px;
-}
-.logo-name span { color:var(--green); }
-.logo-sub {
-  font-size:10px;
-  color:var(--text-muted);
-  letter-spacing:1px;
-  margin-top:1px;
-  display:none;
+.logo { display:flex; align-items:center; min-width:0; }
+.brand-logo {
+  display:block;
+  width:132px;
+  max-width:42vw;
+  height:38px;
+  object-fit:contain;
+  object-position:left center;
 }
 
 .header-right {
@@ -1175,7 +1159,7 @@ body::before {
    MOBILE REFINEMENTS
 ════════════════════════════════════════ */
 @media(max-width:767px) {
-  .logo-name { font-size:16px; }
+  .brand-logo { width:122px; height:36px; }
   .status-badge { font-size:10px; }
   .btn-logout { width:34px; height:34px; padding:0; justify-content:center; }
   .trap-field:nth-child(1),
@@ -1216,7 +1200,6 @@ body::before {
    DESKTOP (≥1024px)
 ════════════════════════════════════════ */
 @media(min-width:1024px) {
-  .logo-sub { display:block; }
   .clock-badge { display:block; }
   .btn-logout-text { display:inline; }
   .header { padding:0 24px; }
@@ -1260,18 +1243,7 @@ body::before {
 ═══════════════════════════════════════ -->
 <header class="header">
   <div class="logo">
-    <div class="logo-icon">
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M7 20h10"/>
-        <path d="M10 20c5.5-2.5.8-6.4 3-10"/>
-        <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/>
-        <path d="M14.1 6a7 7 0 0 1 1.1 4.8 4 4 0 0 1-1.3 2.9c-1 .8-2.1 1.2-3.3 1.3-.2-1.7.4-3.5 1.3-5"/>
-      </svg>
-    </div>
-    <div>
-      <div class="logo-name">SPY<span>TRAP</span></div>
-      <div class="logo-sub">MONITORAMENTO DE PRAGAS</div>
-    </div>
+    <img class="brand-logo" src="Logos/logo_preta.png" alt="SPYTRAP">
   </div>
   <div class="header-right">
     <div class="status-badge">
