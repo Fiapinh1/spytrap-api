@@ -63,25 +63,49 @@ function formatarUltimaCaptura(timestamp) {
   if (Number.isNaN(data.getTime())) return 'Sem dados';
 
   const hojeLocal = dateKeyNoFuso(new Date());
-  const dataLocal = dateKeyNoFuso(data);
+  const dataLocal = dateKeyDaCaptura(timestamp);
   const diffDias = diferencaDiasEntreChaves(hojeLocal, dataLocal);
-  const hora = data.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: APP_TIME_ZONE,
-  });
+  const hora = horaDaCaptura(timestamp, data);
 
   if (diffDias === 0) return `Hoje às ${hora}`;
   if (diffDias === 1) return `Ontem às ${hora}`;
 
-  const dataFmt = data.toLocaleDateString('pt-BR', {
+  const dataFmt = dataFormatadaDaCaptura(timestamp, data);
+
+  return `${dataFmt} às ${hora}`;
+}
+
+function dateKeyDaCaptura(timestamp) {
+  if (typeof timestamp === 'string' && /^\d{4}-\d{2}-\d{2}/.test(timestamp)) {
+    return timestamp.slice(0, 10);
+  }
+  return dateKeyNoFuso(new Date(timestamp));
+}
+
+function horaDaCaptura(timestamp, data = new Date(timestamp)) {
+  if (typeof timestamp === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(timestamp)) {
+    return timestamp.slice(11, 16);
+  }
+
+  return data.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: APP_TIME_ZONE,
+  });
+}
+
+function dataFormatadaDaCaptura(timestamp, data = new Date(timestamp)) {
+  if (typeof timestamp === 'string' && /^\d{4}-\d{2}-\d{2}/.test(timestamp)) {
+    const [ano, mes, dia] = timestamp.slice(0, 10).split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  return data.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     timeZone: APP_TIME_ZONE,
   });
-
-  return `${dataFmt} às ${hora}`;
 }
 
 function dateKeyNoFuso(data) {
@@ -116,17 +140,10 @@ function faixaUtcDoDiaLocal(dateKey) {
 
 function formatarCaptura(row) {
   const data = new Date(row.capturada_em);
-  const rawTime = typeof row.capturada_em === 'string'
-    ? String(row.capturada_em).slice(11, 16)
-    : null;
 
   return {
     id: row.id,
-    time: rawTime || data.toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'America/Sao_Paulo',
-    }),
+    time: horaDaCaptura(row.capturada_em, data),
     count: row.total_insetos,
     level: row.nivel,
     confidence: row.confianca_ia === null || row.confianca_ia === undefined
