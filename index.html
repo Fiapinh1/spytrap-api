@@ -504,12 +504,20 @@ body::before {
   color:var(--green);
   font-weight:800;
 }
-.cal-day.in-range { background:rgba(22,163,74,.04); border-color:rgba(22,163,74,.14); }
+.cal-grid.range-mode .cal-day.has-data:not(.range-start):not(.range-end):not(.in-range) {
+  background:transparent;
+}
+.cal-day.in-range {
+  background:rgba(22,163,74,.12);
+  border-color:rgba(22,163,74,.35);
+  color:var(--green);
+}
 .cal-day.range-start, .cal-day.range-end {
   border-color:var(--green);
-  background:var(--green-dim);
-  color:var(--green);
+  background:var(--green);
+  color:var(--text-invert);
   font-weight:800;
+  box-shadow:0 8px 18px rgba(22,163,74,.22);
 }
 .cal-day.has-data:not(.selected):not(.range-start):not(.range-end) {
   background:rgba(22,163,74,.04);
@@ -522,28 +530,31 @@ body::before {
 .cal-dot.low  { background:var(--green); }
 
 .range-controls {
-  display:flex;
-  flex-direction:column;
+  display:grid;
+  grid-template-columns:1fr 1fr;
   gap:10px;
-  padding-top:12px;
-  border-top:1px solid var(--border);
+  padding:10px;
+  margin:12px 0;
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  background:var(--surface2);
 }
-.range-row { display:flex; align-items:center; gap:10px; }
+.range-row { display:flex; flex-direction:column; gap:5px; }
 .range-lbl {
   font-size:10px;
   letter-spacing:1px;
   text-transform:uppercase;
   color:var(--text-muted);
-  width:36px;
   font-weight:600;
 }
 .range-input {
-  flex:1;
-  background:var(--surface2);
+  width:100%;
+  min-width:0;
+  background:var(--surface);
   border:1px solid var(--border);
   border-radius:var(--radius-sm);
-  padding:10px 12px;
-  font-size:13px;
+  padding:9px 10px;
+  font-size:12px;
   color:var(--text);
   outline:none;
 }
@@ -553,7 +564,7 @@ body::before {
 }
 .btn-apply {
   width:100%;
-  padding:12px;
+  padding:10px;
   background:var(--green-dim);
   border:1px solid var(--green);
   border-radius:var(--radius-sm);
@@ -563,6 +574,7 @@ body::before {
   text-transform:uppercase;
   cursor:pointer;
   font-weight:700;
+  grid-column:1 / -1;
 }
 .btn-apply:hover {
   background:var(--green);
@@ -576,6 +588,7 @@ body::before {
   cursor:pointer;
   text-align:center;
   padding:4px;
+  grid-column:1 / -1;
 }
 .btn-clear:hover { color:var(--text); }
 
@@ -1269,6 +1282,18 @@ body::before {
         <div class="mode-tab active" id="tabDay"   onclick="setMode('day')">DIA</div>
         <div class="mode-tab"        id="tabRange" onclick="setMode('range')">PERÍODO</div>
       </div>
+      <div class="range-controls" id="rangeControls" style="display:none">
+        <div class="range-row">
+          <div class="range-lbl">DE</div>
+          <input type="date" class="range-input" id="rangeStart" onchange="previewRangeSelection(true)">
+        </div>
+        <div class="range-row">
+          <div class="range-lbl">ATÉ</div>
+          <input type="date" class="range-input" id="rangeEnd" onchange="previewRangeSelection(true)">
+        </div>
+        <button class="btn-apply" onclick="applyRange()">APLICAR PERÍODO</button>
+        <button class="btn-clear" onclick="clearRange()">Limpar seleção</button>
+      </div>
       <div class="cal-nav">
         <button class="cal-btn" onclick="prevMonth()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1292,18 +1317,6 @@ body::before {
         <div class="cal-wd">S</div>
       </div>
       <div class="cal-grid" id="calGrid"></div>
-      <div class="range-controls" id="rangeControls" style="display:none">
-        <div class="range-row">
-          <div class="range-lbl">DE</div>
-          <input type="date" class="range-input" id="rangeStart">
-        </div>
-        <div class="range-row">
-          <div class="range-lbl">ATÉ</div>
-          <input type="date" class="range-input" id="rangeEnd">
-        </div>
-        <button class="btn-apply" onclick="applyRange()">APLICAR PERÍODO</button>
-        <button class="btn-clear" onclick="clearRange()">Limpar seleção</button>
-      </div>
       <div class="cal-legend">
         <div class="cal-legend-item">
           <div class="cal-legend-dot" style="background:var(--red)"></div>
@@ -1568,6 +1581,18 @@ const chipStyle   = (l) => l==='high'
   ? 'color:var(--amber);border-color:rgba(217,119,6,.3);background:var(--amber-dim)'
   : 'color:var(--green);border-color:rgba(22,163,74,.3);background:var(--green-dim)';
 
+function normalizeRangeDates(start, end) {
+  if (!start || !end) return { start, end };
+  return start <= end
+    ? { start, end }
+    : { start: end, end: start };
+}
+
+function syncRangeInputs() {
+  document.getElementById('rangeStart').value = rangeStart || '';
+  document.getElementById('rangeEnd').value = rangeEnd || '';
+}
+
 function showToast(msg, type='info', duration=2800) {
   document.querySelectorAll('.toast').forEach(t => t.remove());
   const t = document.createElement('div');
@@ -1608,6 +1633,18 @@ function mobileTab(panel) {
     }
     bn.classList.toggle('active', p === panel);
   });
+}
+
+function focusCapturesPanel() {
+  mobileTab('captures');
+  if (window.innerWidth < 1024) {
+    setTimeout(() => {
+      document.getElementById('panelCaptures').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 80);
+  }
 }
 
 function syncMobilePanels() {
@@ -1701,7 +1738,7 @@ function setMode(m) {
   viewMode = m;
   document.getElementById('tabDay').classList.toggle('active', m==='day');
   document.getElementById('tabRange').classList.toggle('active', m==='range');
-  document.getElementById('rangeControls').style.display = m==='range' ? 'flex' : 'none';
+  document.getElementById('rangeControls').style.display = m==='range' ? 'grid' : 'none';
   document.getElementById('viewModeBadge').textContent = m==='day' ? 'DIA ÚNICO' : 'PERÍODO';
   if (m === 'day') {
     rangeStart = null; rangeEnd = null;
@@ -1770,6 +1807,7 @@ async function loadCalendarMonth(year, month) {
 function renderCalendar() {
   const grid = document.getElementById('calGrid');
   grid.innerHTML = '';
+  grid.classList.toggle('range-mode', viewMode === 'range');
   const firstDay = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   for (let i = 0; i < firstDay; i++) {
@@ -1783,10 +1821,10 @@ function renderCalendar() {
     const key = dateKey(date);
     const isToday = key === dateKey(TODAY);
     const isFuture = date > TODAY;
-    const isSelected = key === selectedDay;
-    const inRange = rangeStart && rangeEnd && key >= rangeStart && key <= rangeEnd;
-    const isRangeStart = key === rangeStart;
-    const isRangeEnd = key === rangeEnd;
+    const isSelected = viewMode === 'day' && key === selectedDay;
+    const inRange = viewMode === 'range' && rangeStart && rangeEnd && key >= rangeStart && key <= rangeEnd;
+    const isRangeStart = viewMode === 'range' && key === rangeStart;
+    const isRangeEnd = viewMode === 'range' && key === rangeEnd;
     const hasData = !!calendarData[key];
     let classes = 'cal-day';
     if (isToday) classes += ' today';
@@ -1815,6 +1853,7 @@ function renderCalendar() {
           selectedDay = key;
           renderCalendar();
           loadDayCaptures(key);
+          focusCapturesPanel();
         } else {
           if (!rangeStart || (rangeStart && rangeEnd)) {
             rangeStart = key;
@@ -1827,8 +1866,10 @@ function renderCalendar() {
               rangeEnd = key;
             }
           }
+          syncRangeInputs();
           renderCalendar();
           renderRangeSummary();
+          if (rangeStart && rangeEnd) focusCapturesPanel();
         }
       };
     }
@@ -2093,16 +2134,26 @@ function updateTrapMap(lat, lng, name, latStr, lngStr) {
   trapMap.setView([lat, lng], 14);
 }
 
+function previewRangeSelection(shouldFocusCaptures = false) {
+  const startInput = document.getElementById('rangeStart').value;
+  const endInput = document.getElementById('rangeEnd').value;
+  const normalized = normalizeRangeDates(startInput, endInput);
+  rangeStart = normalized.start || null;
+  rangeEnd = normalized.end || null;
+  syncRangeInputs();
+  renderCalendar();
+  if (rangeStart && rangeEnd) {
+    renderRangeSummary();
+    if (shouldFocusCaptures) focusCapturesPanel();
+  }
+}
+
 function applyRange() {
-  const s = document.getElementById('rangeStart').value;
-  const e = document.getElementById('rangeEnd').value;
-  if (s && e) {
-    rangeStart = s;
-    rangeEnd = e > s ? e : s;
-    if (rangeEnd < rangeStart) [rangeStart, rangeEnd] = [rangeEnd, rangeStart];
+  previewRangeSelection();
+  if (rangeStart && rangeEnd) {
     loadCalendarMonth(calYear, calMonth);
     renderRangeSummary();
-    mobileTab('captures');
+    focusCapturesPanel();
   }
 }
 
