@@ -115,7 +115,12 @@ body::before {
   box-shadow:0 2px 12px rgba(0,0,0,0.06);
 }
 
-.logo { display:flex; align-items:center; min-width:0; }
+.logo { display:flex; align-items:center; min-width:0; text-decoration:none; }
+.logo:focus-visible {
+  outline:2px solid var(--green);
+  outline-offset:4px;
+  border-radius:var(--radius-sm);
+}
 .brand-logo {
   display:block;
   width:132px;
@@ -1242,9 +1247,9 @@ body::before {
      HEADER
 ═══════════════════════════════════════ -->
 <header class="header">
-  <div class="logo">
+  <a class="logo" href="index.html" aria-label="Ir para a página inicial">
     <img class="brand-logo" src="Logos/logo_preta.png" alt="SPYTRAP">
-  </div>
+  </a>
   <div class="header-right">
     <div class="status-badge">
       <div class="status-dot"></div>
