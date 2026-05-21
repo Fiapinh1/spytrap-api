@@ -115,19 +115,34 @@ body::before {
   box-shadow:0 2px 12px rgba(0,0,0,0.06);
 }
 
-.logo { display:flex; align-items:center; min-width:0; text-decoration:none; }
+.logo { display:flex; align-items:center; gap:10px; min-width:0; text-decoration:none; color:var(--text); }
 .logo:focus-visible {
   outline:2px solid var(--green);
   outline-offset:4px;
   border-radius:var(--radius-sm);
 }
-.brand-logo {
+.brand-mark {
   display:block;
-  width:132px;
-  max-width:42vw;
-  height:38px;
+  width:36px;
+  height:36px;
   object-fit:contain;
-  object-position:left center;
+  object-position:center;
+  flex-shrink:0;
+}
+.brand-name {
+  font-size:17px;
+  font-weight:800;
+  letter-spacing:-.5px;
+  line-height:1;
+}
+.brand-name span { color:var(--green); }
+.brand-sub {
+  font-size:9px;
+  color:var(--text-muted);
+  letter-spacing:1.8px;
+  text-transform:uppercase;
+  margin-top:5px;
+  white-space:nowrap;
 }
 
 .header-right {
@@ -1164,7 +1179,9 @@ body::before {
    MOBILE REFINEMENTS
 ════════════════════════════════════════ */
 @media(max-width:767px) {
-  .brand-logo { width:122px; height:36px; }
+  .brand-mark { width:34px; height:34px; }
+  .brand-name { font-size:16px; }
+  .brand-sub { font-size:8px; letter-spacing:1.4px; }
   .status-badge { font-size:10px; }
   .btn-logout { width:34px; height:34px; padding:0; justify-content:center; }
   .trap-field:nth-child(1),
@@ -1248,7 +1265,11 @@ body::before {
 ═══════════════════════════════════════ -->
 <header class="header">
   <a class="logo" href="index.html" aria-label="Ir para a página inicial">
-    <img class="brand-logo" src="Logos/logo_preta.png" alt="SPYTRAP">
+    <img class="brand-mark" src="Logos/logo_preta.png" alt="">
+    <span>
+      <span class="brand-name">SPY<span>TRAP</span></span>
+      <span class="brand-sub">Sistema de monitoramento de pragas</span>
+    </span>
   </a>
   <div class="header-right">
     <div class="status-badge">
