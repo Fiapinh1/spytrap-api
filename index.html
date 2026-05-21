@@ -162,12 +162,21 @@ body::before {
   padding:4px 9px;
   border-radius:20px;
 }
+.status-badge.offline {
+  color:var(--red);
+  background:var(--red-dim);
+  border-color:rgba(220,38,38,.3);
+}
 .status-dot {
   width:6px;
   height:6px;
   border-radius:50%;
   background:var(--green);
   animation:pulse 2s infinite;
+}
+.status-badge.offline .status-dot {
+  background:var(--red);
+  animation:none;
 }
 
 .clock-badge {
@@ -1272,9 +1281,9 @@ body::before {
     </span>
   </a>
   <div class="header-right">
-    <div class="status-badge">
+    <div class="status-badge" id="headerTrapStatus">
       <div class="status-dot"></div>
-      <span>AO VIVO</span>
+      <span id="headerTrapStatusText">CARREGANDO</span>
     </div>
     <div class="clock-badge" id="clock">--:--:--</div>
     <button class="btn-logout" onclick="confirmLogout()">
@@ -1778,6 +1787,14 @@ function renderTrapOptions() {
   });
 }
 
+function updateHeaderTrapStatus(status) {
+  const badge = document.getElementById('headerTrapStatus');
+  const text = document.getElementById('headerTrapStatusText');
+  const isOnline = status === 'online';
+  badge.classList.toggle('offline', !isOnline);
+  text.textContent = isOnline ? 'ONLINE' : 'OFFLINE';
+}
+
 async function selectTrap(trapId) {
   activeTrapId = trapId;
   renderTrapOptions();
@@ -1799,6 +1816,7 @@ async function loadTrapInfo(trapId) {
     if (coordEl) coordEl.textContent = `${info.lat}, ${info.lng}`;
     const dot = document.querySelector('.status-dot');
     const statusEl = document.getElementById('trapStatus');
+    updateHeaderTrapStatus(info.status);
     if (info.status === 'online') {
       dot.style.background = 'var(--green)';
       dot.style.boxShadow  = '0 0 8px var(--green)';
@@ -1816,6 +1834,7 @@ async function loadTrapInfo(trapId) {
       updateTrapMap(info.latDec, info.lngDec, info.name, info.lat, info.lng);
     }
   } catch(e) {
+    updateHeaderTrapStatus('offline');
     showToast('Erro ao carregar dados da armadilha', 'error');
   }
 }
