@@ -1767,14 +1767,18 @@ function prevDay() {
   const d = new Date(selectedDay + 'T12:00:00');
   d.setDate(d.getDate() - 1);
   selectedDay = dateKey(d);
+  calYear = d.getFullYear();
+  calMonth = d.getMonth();
   loadDayCaptures(selectedDay);
   loadCalendarMonth(calYear, calMonth);
 }
 function nextDay() {
   const d = new Date(selectedDay + 'T12:00:00');
   d.setDate(d.getDate() + 1);
-  if (d > TODAY) return;
+  if (dateKey(d) > dateKey(TODAY)) return;
   selectedDay = dateKey(d);
+  calYear = d.getFullYear();
+  calMonth = d.getMonth();
   loadDayCaptures(selectedDay);
   loadCalendarMonth(calYear, calMonth);
 }
@@ -1851,6 +1855,8 @@ function renderCalendar() {
       dEl.onclick = () => {
         if (viewMode === 'day') {
           selectedDay = key;
+          calYear = date.getFullYear();
+          calMonth = date.getMonth();
           renderCalendar();
           loadDayCaptures(key);
           focusCapturesPanel();
