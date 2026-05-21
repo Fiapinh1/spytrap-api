@@ -137,45 +137,26 @@ body::before {
 }
 .brand-name span { color:var(--text-invert); }
 .brand-sub {
+  display:block;
   font-size:9px;
   color:rgba(255,255,255,.82);
   letter-spacing:1.8px;
   text-transform:uppercase;
   margin-top:5px;
   white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
 .br-flag {
-  position:relative;
-  width:30px;
-  height:20px;
+  display:block;
+  width:26px;
+  height:26px;
   flex-shrink:0;
-  overflow:hidden;
-  border-radius:4px;
-  background:#009b3a;
-  border:1px solid rgba(255,255,255,.55);
-  box-shadow:0 4px 12px rgba(0,0,0,.16);
-}
-.br-flag::before {
-  content:'';
-  position:absolute;
-  left:50%;
-  top:50%;
-  width:17px;
-  height:17px;
-  background:#ffdf00;
-  transform:translate(-50%,-50%) rotate(45deg);
-}
-.br-flag::after {
-  content:'';
-  position:absolute;
-  left:50%;
-  top:50%;
-  width:8px;
-  height:8px;
+  object-fit:contain;
   border-radius:50%;
-  background:#002776;
-  transform:translate(-50%,-50%);
+  border:1px solid rgba(255,255,255,.62);
+  box-shadow:0 4px 12px rgba(0,0,0,.16);
 }
 
 .header-right {
@@ -1287,8 +1268,8 @@ body::before {
 @media(max-width:767px) {
   .brand-mark { width:34px; height:34px; }
   .brand-name { font-size:16px; }
-  .brand-sub { font-size:8px; letter-spacing:1.4px; }
-  .br-flag { width:26px; height:18px; }
+  .brand-sub { max-width:170px; font-size:8px; letter-spacing:1.2px; }
+  .br-flag { width:22px; height:22px; }
   .status-badge { font-size:10px; }
   .btn-logout { width:34px; height:34px; padding:0; justify-content:center; }
   .trap-field:nth-child(1),
@@ -1356,6 +1337,13 @@ body::before {
     padding:7px 10px;
     font-size:12px;
   }
+}
+
+@media(max-width:430px) {
+  .header-right { gap:7px; }
+  .brand-sub { max-width:145px; }
+  .br-flag { display:none; }
+  .status-badge { padding:4px 8px; }
 }
 
 /* ════════════════════════════════════════
@@ -1427,7 +1415,7 @@ body::before {
     </span>
   </a>
   <div class="header-right">
-    <div class="br-flag" role="img" aria-label="Brasil" title="Brasil"></div>
+    <img class="br-flag" src="Logos/bandeira_brasil.png" alt="Brasil" title="Brasil">
     <div class="status-badge" id="headerTrapStatus">
       <div class="status-dot"></div>
       <span id="headerTrapStatusText">CARREGANDO</span>
