@@ -212,15 +212,25 @@ body::before {
   position:relative;
   z-index:10;
   margin:12px 16px 0;
-  background:var(--surface);
-  border:1px solid var(--border);
+  background:linear-gradient(135deg, #4be74b24, rgba(255,255,255,.96) 58%);
+  border:1px solid rgba(22,163,74,.18);
   border-radius:var(--radius-lg);
   padding:12px;
   display:flex;
   align-items:flex-start;
   flex-direction:column;
   gap:10px;
-  box-shadow:var(--shadow-sm);
+  box-shadow:0 8px 28px rgba(22,163,74,.10), var(--shadow-sm);
+}
+.trap-bar::before {
+  content:'';
+  position:absolute;
+  inset:0 auto 0 0;
+  width:4px;
+  background:var(--green);
+  opacity:.85;
+  border-radius:var(--radius-lg) 0 0 var(--radius-lg);
+  pointer-events:none;
 }
 
 .trap-bar-top {
@@ -240,8 +250,8 @@ body::before {
   align-items: center;
   justify-content:space-between;
   gap: 10px;
-  background: var(--surface2);
-  border:1px solid var(--border);
+  background: rgba(255,255,255,.74);
+  border:1px solid rgba(22,163,74,.18);
   border-radius: var(--radius-md);
   padding: 9px 12px;
   cursor: pointer;
@@ -249,7 +259,7 @@ body::before {
 }
 .trap-selector-btn:hover {
   border-color:var(--green);
-  background:var(--green-dim);
+  background:rgba(255,255,255,.92);
 }
 .trap-selector-name {
   font-size:15px;
@@ -318,8 +328,8 @@ body::before {
   width:100%;
 }
 .tstat {
-  background:var(--surface2);
-  border:1px solid var(--border);
+  background:rgba(255,255,255,.70);
+  border:1px solid rgba(22,163,74,.14);
   border-radius:var(--radius-md);
   padding:10px;
   text-align:center;
@@ -349,7 +359,7 @@ body::before {
   gap:8px 12px;
   width:100%;
   padding-top:8px;
-  border-top:1px solid var(--border-soft);
+  border-top:1px solid rgba(22,163,74,.16);
 }
 .trap-field {
   display:flex;
