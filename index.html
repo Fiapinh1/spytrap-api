@@ -388,6 +388,7 @@ body::before {
   gap:12px;
   padding:12px 16px;
   padding-bottom:calc(var(--bottom-nav-h) + 14px);
+  min-height:0;
 }
 
 /* ════════════════════════════════════════
@@ -402,6 +403,7 @@ body::before {
   flex-direction:column;
   gap:10px;
   display:none;
+  min-height:0;
 }
 .panel.mobile-active { display:flex; }
 
@@ -687,6 +689,10 @@ body::before {
 .day-nav-btn:active:not(:disabled) { transform:scale(.95); }
 .day-nav-btn:disabled { opacity:.3; cursor:default; }
 
+#captureListContainer {
+  min-height:0;
+}
+
 .infestation-alert {
   border-radius:var(--radius-md);
   border:1px solid;
@@ -738,6 +744,17 @@ body::before {
   gap:8px;
   overflow-y:auto;
   flex:1;
+  min-height:0;
+  padding-right:4px;
+}
+.capture-list::-webkit-scrollbar { width:6px; }
+.capture-list::-webkit-scrollbar-track { background:transparent; }
+.capture-list::-webkit-scrollbar-thumb {
+  background:rgba(22,163,74,.32);
+  border-radius:999px;
+}
+.capture-list::-webkit-scrollbar-thumb:hover {
+  background:rgba(22,163,74,.48);
 }
 .capture-item {
   background:var(--surface2);
@@ -1264,8 +1281,23 @@ body::before {
     grid-template-columns: 320px 1fr;
     padding:18px 24px 32px;
     gap:16px;
+    height:calc(100dvh - var(--header-h) - 120px);
+    min-height:520px;
+    overflow:hidden;
   }
-  .panel { display:flex; }
+  .panel {
+    display:flex;
+    max-height:100%;
+    overflow:hidden;
+  }
+  #panelCaptures,
+  #panelCalendar {
+    min-height:0;
+  }
+  #calContent,
+  #mapContent {
+    min-height:0;
+  }
   .bottom-nav { display:none; }
   .toast { bottom:24px; }
   .logout-btns { flex-direction:row; }
