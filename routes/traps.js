@@ -56,21 +56,21 @@ function normalizarImagemUrl(valor) {
   return data?.publicUrl || null;
 }
 
-function formatarUltimaCaptura(timestamp) {
-  if (!timestamp) return 'Sem dados';
+function formatarUltimaCaptura(row) {
+  if (!row?.capturada_em) return 'Sem dados';
 
-  const data = new Date(timestamp);
+  const data = new Date(row.capturada_em);
   if (Number.isNaN(data.getTime())) return 'Sem dados';
 
   const hojeLocal = dateKeyNoFuso(new Date());
-  const dataLocal = dateKeyDaCaptura(timestamp);
+  const dataLocal = dateKeyDaCaptura(row.capturada_em);
   const diffDias = diferencaDiasEntreChaves(hojeLocal, dataLocal);
-  const hora = horaDaCaptura(timestamp, data);
+  const hora = formatarCaptura(row).time;
 
   if (diffDias === 0) return `Hoje às ${hora}`;
   if (diffDias === 1) return `Ontem às ${hora}`;
 
-  const dataFmt = dataFormatadaDaCaptura(timestamp, data);
+  const dataFmt = dataFormatadaDaCaptura(row.capturada_em, data);
 
   return `${dataFmt} às ${hora}`;
 }
@@ -206,7 +206,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     ] = await Promise.all([
       supabase
         .from('capturas')
-        .select('capturada_em')
+        .select('id, capturada_em, total_insetos, nivel, confianca_ia, imagem_url, bounding_boxes')
         .eq('armadilha_id', row.id)
         .order('capturada_em', { ascending: false })
         .limit(1)
@@ -230,7 +230,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 
     return res.json({
       ...trap,
-      lastCapture: formatarUltimaCaptura(ultimaCaptura?.capturada_em),
+      lastCapture: formatarUltimaCaptura(ultimaCaptura),
       monthTotal: (capturasMes || []).reduce((total, captura) => total + (captura.total_insetos || 0), 0),
       peakDay: Object.keys(somaPorDia).length ? Math.max(...Object.values(somaPorDia)) : 0,
       monthCaptures: (capturasMes || []).length,
