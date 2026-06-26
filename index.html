@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -7,8 +7,6 @@
 <title>SPYTRAP — Monitoramento de Pragas</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
@@ -25,10 +23,6 @@
   </a>
   <div class="header-right">
     <img class="br-flag" src="Logos/bandeira_brasil.png" alt="Brasil" title="Brasil">
-    <div class="status-badge" id="headerTrapStatus">
-      <div class="status-dot"></div>
-      <span id="headerTrapStatusText">CARREGANDO</span>
-    </div>
     <div class="clock-badge" id="clock">--:--:--</div>
     <button class="btn-logout" onclick="confirmLogout()">
       <span style="display:flex;align-items:center">
@@ -80,7 +74,7 @@
   <div class="trap-details">
     <div class="trap-field">
       <div class="label">Localização</div>
-      <div class="trap-field-val coords coords-link" id="trapCoords" onclick="showMapView()" title="Ver no mapa">
+      <div class="trap-field-val coords" id="trapCoords">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/>
           <circle cx="12" cy="10" r="3"/>
@@ -90,17 +84,21 @@
     </div>
     <div class="trap-field">
       <div class="label">Última captura</div>
+      <button class="last-capture-thumb" id="lastCaptureThumb" onclick="openLatestCapture()" title="Abrir última captura" type="button" style="display:none">
+        <img id="lastCaptureImg" alt="Última captura">
+      </button>
       <div class="trap-field-val" id="trapLastCap">—</div>
+    </div>
+    <div class="trap-field">
+      <div class="label">Infestação 3 dias</div>
+      <div class="trap-field-val infestation-summary" id="trapInfestation">
+        <span class="infestation-pill low">Classificação: Baixa</span>
+        <span class="infestation-total">Somatório dos últimos 3 dias: —</span>
+      </div>
     </div>
     <div class="trap-field">
       <div class="label">Praga alvo</div>
       <div class="trap-field-val species">Diatraea saccharalis</div>
-    </div>
-    <div class="trap-field">
-      <div class="label">Status</div>
-      <div class="trap-field-val online" id="trapStatus">
-        <span class="status-pill online">Online</span>
-      </div>
     </div>
   </div>
 </div>
@@ -112,7 +110,7 @@
   <div class="panel mobile-active" id="panelCalendar" data-panel="calendar">
     <div class="map-panel-tabs">
       <div class="mpt active" id="mptCal" onclick="showCalView()">CALENDÁRIO</div>
-      <div class="mpt"        id="mptMap" onclick="showMapView()">MAPA</div>
+      <div class="mpt"        id="mptReports" onclick="showReportsView()">RELATÓRIOS</div>
     </div>
     <div id="calContent">
       <div class="mode-tabs">
@@ -169,8 +167,28 @@
         </div>
       </div>
     </div>
-    <div id="mapContent" class="map-container">
-      <div id="trapMap" style="width:100%;height:100%;min-height:260px;"></div>
+    <div id="reportContent" class="report-tab-content">
+      <div class="report-filter-grid">
+        <button class="report-preset active" id="reportPreset7" onclick="setReportPreset('7')">7 dias</button>
+        <button class="report-preset" id="reportPresetToday" onclick="setReportPreset('today')">Hoje</button>
+        <button class="report-preset" id="reportPresetMonth" onclick="setReportPreset('month')">Mês</button>
+      </div>
+      <div class="range-controls report-controls">
+        <div class="range-row">
+          <div class="range-lbl">DE</div>
+          <input type="date" class="range-input" id="reportStart">
+        </div>
+        <div class="range-row">
+          <div class="range-lbl">ATÉ</div>
+          <input type="date" class="range-input" id="reportEnd">
+        </div>
+        <button class="btn-apply" onclick="generateReport()">GERAR RELATÓRIO</button>
+        <button class="btn-clear" onclick="printReport()">Imprimir</button>
+      </div>
+      <div class="report-mini" id="reportMini">
+        <div class="report-mini-title">Relatório SPYTRAP</div>
+        <div class="report-mini-sub">Selecione um período para gerar a prévia.</div>
+      </div>
     </div>
   </div>
 
@@ -227,6 +245,18 @@
       </span>
       <span>Capturas</span>
     </button>
+    <button class="bn-tab" id="bnReports" onclick="mobileTab('reports')">
+      <span class="bn-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+          <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+          <path d="M8 13h2"/>
+          <path d="M8 17h8"/>
+          <path d="M14 13h2"/>
+        </svg>
+      </span>
+      <span>Relatórios</span>
+    </button>
   </div>
 </nav>
 
@@ -236,15 +266,24 @@
 <div class="fullscreen-modal" id="fullscreenModal">
   <div class="fullscreen-header">
     <div class="fullscreen-title" id="fullscreenTitle">—</div>
-    <button class="fullscreen-close" onclick="closeFullscreenModal()">✕</button>
+    <div class="fullscreen-actions">
+      <button class="fullscreen-tool-btn" id="btnMagnifier" onclick="toggleMagnifier()" aria-label="Ativar lupa" title="Ativar lupa">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.3-4.3"/>
+        </svg>
+        <span>Zoom</span>
+      </button>
+      <button class="fullscreen-close" onclick="closeFullscreenModal()" aria-label="Fechar imagem" title="Fechar">✕</button>
+    </div>
   </div>
   <div class="fullscreen-nav-btns">
-    <button class="fullscreen-nav-btn" id="btnPrevPhoto" onclick="prevPhoto()">
+    <button class="fullscreen-nav-btn" id="btnPrevPhoto" onclick="prevPhoto()" aria-label="Foto anterior" title="Foto anterior">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="15 18 9 12 15 6"/>
       </svg>
     </button>
-    <button class="fullscreen-nav-btn" id="btnNextPhoto" onclick="nextPhoto()">
+    <button class="fullscreen-nav-btn" id="btnNextPhoto" onclick="nextPhoto()" aria-label="Próxima foto" title="Próxima foto">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="9 18 15 12 9 6"/>
       </svg>
@@ -252,12 +291,36 @@
   </div>
   <div class="fullscreen-img-wrapper" id="fullscreenImgWrapper">
     <img class="fullscreen-img" id="fullscreenImg" alt="Imagem ampliada">
+    <div class="image-magnifier" id="imageMagnifier"></div>
   </div>
   <div class="fullscreen-meta" id="fullscreenMeta">
     <span class="fullscreen-counter" id="fullscreenCounter">1 / 3</span>
     <div class="fullscreen-meta-item count" id="fullscreenCount">— insetos</div>
     <div class="fullscreen-meta-item conf" id="fullscreenConf">—% confiança</div>
     <div class="fullscreen-meta-item level" id="fullscreenLevel">—</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     TAPE CHANGE MODAL
+═══════════════════════════════════════ -->
+<div class="modal" id="tapeChangeModal" onclick="handleModalClick(event,'tapeChangeModal')">
+  <div class="modal-box logout-modal-box">
+    <div class="logout-icon tape-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 7h16"/>
+        <path d="M7 7a5 5 0 0 1 10 0"/>
+        <rect width="18" height="13" x="3" y="7" rx="2"/>
+        <path d="M8 14h8"/>
+        <path d="m13 11 3 3-3 3"/>
+      </svg>
+    </div>
+    <div class="logout-title">Iniciar nova fita?</div>
+    <div class="logout-sub">A contagem atual será encerrada,<br>mas o histórico será mantido.</div>
+    <div class="logout-btns">
+      <button class="btn-confirm-tape" onclick="doTapeChange()">CONFIRMAR TROCA</button>
+      <button class="btn-cancel" onclick="closeModal('tapeChangeModal')">CANCELAR</button>
+    </div>
   </div>
 </div>
 
@@ -383,6 +446,10 @@ const API = {
     return this.request(`/api/traps/${trapId}/calendar?year=${year}&month=${month+1}`);
   },
 
+  async replaceTapeCycle(trapId) {
+    return this.request(`/api/traps/${trapId}/tape-cycle/replace`, { method: 'POST' });
+  },
+
   async logout() {
     const token = this.getToken();
     if (token) {
@@ -420,6 +487,21 @@ const chipStyle   = (l) => l==='high'
 
 const severityRank = { low: 1, med: 2, high: 3 };
 
+function insetosLabel(total, singular='inseto', plural='insetos') {
+  return `${total} ${total === 1 ? singular : plural}`;
+}
+
+function novosInsetosLabel(total) {
+  return `${insetosLabel(total)} ${total === 1 ? 'novo' : 'novos'}`;
+}
+
+function rawCountChip(cap) {
+  const rawCount = Number(cap.rawCount);
+  const newCount = Number(cap.count) || 0;
+  if (!Number.isFinite(rawCount) || rawCount <= newCount) return '';
+  return `<span class="cap-chip raw-count">${insetosLabel(rawCount)} na imagem</span>`;
+}
+
 function normalizeRangeDates(start, end) {
   if (!start || !end) return { start, end };
   return start <= end
@@ -454,7 +536,11 @@ let activeDayKey   = dateKey(TODAY);
 let activeDayIndex = 0;
 let activeDayCaptures = [];
 let mobileActivePanel = 'calendar';
-let trapMap = null;
+let activeBoundingBoxes = [];
+let magnifierEnabled = false;
+let activeTrapInfo = null;
+let activeReportData = null;
+let latestCaptureShortcut = null;
 
 (function initClock() {
   const el = document.getElementById('clock');
@@ -462,13 +548,91 @@ let trapMap = null;
   tick(); setInterval(tick, 1000);
 })();
 
+window.addEventListener('resize', () => {
+  if (document.getElementById('fullscreenModal')?.classList.contains('open')) {
+    renderBoundingBoxes(activeBoundingBoxes);
+  }
+});
+
+document.addEventListener('keydown', (event) => {
+  const modal = document.getElementById('fullscreenModal');
+  if (!modal?.classList.contains('open')) return;
+
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    prevPhoto();
+  } else if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    nextPhoto();
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    closeFullscreenModal();
+  }
+});
+
+function setMagnifierEnabled(enabled) {
+  magnifierEnabled = enabled;
+  const btn = document.getElementById('btnMagnifier');
+  const lens = document.getElementById('imageMagnifier');
+  btn?.classList.toggle('active', magnifierEnabled);
+  btn?.setAttribute('aria-label', magnifierEnabled ? 'Desativar lupa' : 'Ativar lupa');
+  btn?.setAttribute('title', magnifierEnabled ? 'Desativar lupa' : 'Ativar lupa');
+  if (!magnifierEnabled) lens?.classList.remove('visible');
+}
+
+function toggleMagnifier() {
+  setMagnifierEnabled(!magnifierEnabled);
+}
+
+function updateMagnifier(event) {
+  if (!magnifierEnabled) return;
+
+  const img = document.getElementById('fullscreenImg');
+  const wrapper = document.getElementById('fullscreenImgWrapper');
+  const lens = document.getElementById('imageMagnifier');
+  if (!img?.complete || !img.naturalWidth || !wrapper || !lens) return;
+
+  const imgRect = img.getBoundingClientRect();
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const x = event.clientX - imgRect.left;
+  const y = event.clientY - imgRect.top;
+
+  if (x < 0 || y < 0 || x > imgRect.width || y > imgRect.height) {
+    lens.classList.remove('visible');
+    return;
+  }
+
+  const zoom = 2.6;
+  const lensSize = lens.offsetWidth || 170;
+  lens.style.left = `${event.clientX - wrapperRect.left}px`;
+  lens.style.top = `${event.clientY - wrapperRect.top}px`;
+  lens.style.backgroundImage = `url("${img.currentSrc || img.src}")`;
+  lens.style.backgroundSize = `${imgRect.width * zoom}px ${imgRect.height * zoom}px`;
+  lens.style.backgroundPosition = `${-(x * zoom - lensSize / 2)}px ${-(y * zoom - lensSize / 2)}px`;
+  lens.classList.add('visible');
+}
+
+function hideMagnifier() {
+  document.getElementById('imageMagnifier')?.classList.remove('visible');
+}
+
 function mobileTab(panel) {
   mobileActivePanel = panel;
-  ['calendar','captures'].forEach(p => {
-    const el = document.getElementById(`panel${p.charAt(0).toUpperCase()+p.slice(1)}`);
+  if (panel === 'reports') {
+    showReportsView();
+  } else if (panel === 'calendar') {
+    showCalView();
+  } else if (panel === 'captures' && document.getElementById('reportContent')?.classList.contains('visible')) {
+    showCalView();
+  }
+
+  ['calendar','reports','captures'].forEach(p => {
     const bn = document.getElementById(`bn${p.charAt(0).toUpperCase()+p.slice(1)}`);
+    if (!bn) return;
+    const targetPanel = p === 'reports' ? 'calendar' : p;
+    const targetEl = document.getElementById(`panel${targetPanel.charAt(0).toUpperCase()+targetPanel.slice(1)}`);
     if (window.innerWidth < 1024) {
-      el.classList.toggle('mobile-active', p === panel);
+      targetEl?.classList.toggle('mobile-active', targetPanel === (panel === 'reports' ? 'calendar' : panel));
     }
     bn.classList.toggle('active', p === panel);
   });
@@ -490,7 +654,7 @@ function syncMobilePanels() {
   if (window.innerWidth < 1024) {
     ['calendar','captures'].forEach(p => {
       const el = document.getElementById(`panel${p.charAt(0).toUpperCase()+p.slice(1)}`);
-      el.classList.toggle('mobile-active', p === mobileActivePanel);
+      el.classList.toggle('mobile-active', p === (mobileActivePanel === 'reports' ? 'calendar' : mobileActivePanel));
     });
   } else {
     ['panelCalendar','panelCaptures'].forEach(id => {
@@ -501,6 +665,15 @@ function syncMobilePanels() {
 }
 
 window.addEventListener('resize', syncMobilePanels);
+
+const fullscreenImgWrapper = document.getElementById('fullscreenImgWrapper');
+fullscreenImgWrapper?.addEventListener('mousemove', updateMagnifier);
+fullscreenImgWrapper?.addEventListener('mouseleave', hideMagnifier);
+fullscreenImgWrapper?.addEventListener('touchmove', (event) => {
+  if (!magnifierEnabled || !event.touches?.length) return;
+  updateMagnifier(event.touches[0]);
+}, { passive: true });
+fullscreenImgWrapper?.addEventListener('touchend', hideMagnifier);
 
 function toggleTrapDropdown() {
   const wrap = document.getElementById('trapSelectorWrap');
@@ -531,54 +704,127 @@ function renderTrapOptions() {
   });
 }
 
-function updateHeaderTrapStatus(status) {
-  const badge = document.getElementById('headerTrapStatus');
-  const text = document.getElementById('headerTrapStatusText');
-  const isOnline = status === 'online';
-  badge.classList.toggle('offline', !isOnline);
-  text.textContent = isOnline ? 'ONLINE' : 'OFFLINE';
+function formatDateTime(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function updateTrapInfestation(infestation, activeCycle = null, history = []) {
+  const el = document.getElementById('trapInfestation');
+  if (!el || !infestation) {
+    if (el) {
+      el.innerHTML = `
+        <span class="infestation-pill low">Classificação: Baixa</span>
+        <span class="infestation-total">Somatório dos últimos 3 dias: —</span>
+      `;
+    }
+    return;
+  }
+
+  const level = infestation.level || 'low';
+  const label = infestation.label || levelLabel[level] || 'Baixa';
+  const sum = Number(infestation.sum) || 0;
+  const daysAvailable = Number(infestation.daysAvailable) || 0;
+  const daysRequired = Number(infestation.daysRequired) || 3;
+  const days = Array.isArray(infestation.days) ? infestation.days : [];
+  const dayChips = days.length
+    ? `<div class="infestation-days">${days.map((day) => `
+        <span>
+          <strong>${Number(day.count) || 0}</strong>
+          <small>${formatDateKey(day.date).slice(0, 5)}</small>
+        </span>
+      `).join('')}</div>`
+    : '<div class="infestation-days empty"><span><strong>—</strong><small>sem dados</small></span></div>';
+  const insufficientText = infestation.insufficientData
+    ? `<span class="infestation-note">Dados insuficientes: ${daysAvailable}/${daysRequired} dias</span>`
+    : '';
+  const historyItems = (history || []).slice(0, 3).map((cycle) => `
+    <div class="tape-history-row">
+      <span>${formatDateTime(cycle.startedAt)}</span>
+      <strong>${cycle.total} mariposas</strong>
+    </div>
+  `).join('');
+
+  el.innerHTML = `
+    <div class="infestation-head">
+      <span class="infestation-icon ${level}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>
+          <path d="m9 12 2 2 4-5"/>
+        </svg>
+      </span>
+      <span class="infestation-pill ${level}">Classificação: ${label}</span>
+    </div>
+    ${dayChips}
+    <div class="tape-cycle-grid">
+      <span><strong>${formatDateTime(activeCycle?.startedAt)}</strong><small>Fita atual iniciada</small></span>
+      <span><strong>${activeCycle?.daysInUse || 0}</strong><small>Dias em uso</small></span>
+      <span><strong>${activeCycle?.total || 0}</strong><small>Total no ciclo</small></span>
+    </div>
+    <span class="infestation-total">Somatório dos últimos 3 dias: ${sum} ${sum === 1 ? 'mariposa' : 'mariposas'}</span>
+    ${insufficientText}
+    <button class="btn-tape-change" type="button" onclick="confirmTapeChange()">Trocar fita</button>
+    ${historyItems ? `<div class="tape-history"><div class="tape-history-title">Histórico de fitas</div>${historyItems}</div>` : ''}
+  `;
+}
+
+function updateLatestCaptureShortcut(capture) {
+  latestCaptureShortcut = capture || null;
+  const btn = document.getElementById('lastCaptureThumb');
+  const img = document.getElementById('lastCaptureImg');
+  if (!btn || !img) return;
+
+  if (capture?.imageUrl) {
+    img.src = capture.imageUrl;
+    btn.style.display = 'block';
+  } else {
+    btn.style.display = 'none';
+    img.removeAttribute('src');
+  }
+}
+
+function openLatestCapture() {
+  if (!latestCaptureShortcut) return;
+  activeDayKey = latestCaptureShortcut.date || selectedDay;
+  activeDayCaptures = [latestCaptureShortcut];
+  openFullscreenModalWithCapture(latestCaptureShortcut, 0);
 }
 
 async function selectTrap(trapId) {
   activeTrapId = trapId;
+  activeReportData = null;
   renderTrapOptions();
   document.getElementById('trapSelectorWrap').classList.remove('open');
   await loadTrapInfo(trapId);
   await loadCalendarMonth(calYear, calMonth);
   loadDayCaptures(selectedDay);
+  if (document.getElementById('reportContent')?.classList.contains('visible')) {
+    generateReport();
+  }
 }
 
 async function loadTrapInfo(trapId) {
   try {
     const info = await API.getTrapInfo(trapId);
+    activeTrapInfo = info;
     document.getElementById('trapName').textContent       = info.name;
     document.getElementById('trapLastCap').textContent    = info.lastCapture;
     document.getElementById('sTotalMonth').textContent    = info.monthTotal;
     document.getElementById('sPeakDay').textContent       = info.peakDay;
     document.getElementById('sCaptures').textContent      = info.monthCaptures;
+    updateTrapInfestation(info.infestation, info.activeTapeCycle, info.tapeCycleHistory);
+    updateLatestCaptureShortcut(info.latestCapture);
     const coordEl = document.getElementById('trapCoordsText') || document.getElementById('trapCoords');
     if (coordEl) coordEl.textContent = `${info.lat}, ${info.lng}`;
-    const dot = document.querySelector('.status-dot');
-    const statusEl = document.getElementById('trapStatus');
-    updateHeaderTrapStatus(info.status);
-    if (info.status === 'online') {
-      dot.style.background = 'var(--green)';
-      dot.style.boxShadow  = '0 0 8px var(--green)';
-      dot.style.animation  = 'pulse 2s infinite';
-      statusEl.innerHTML   = '<span class="status-pill online">Online</span>';
-      statusEl.style.color = '';
-    } else {
-      dot.style.background = 'var(--red)';
-      dot.style.boxShadow  = '0 0 8px var(--red)';
-      dot.style.animation  = 'none';
-      statusEl.innerHTML   = '<span class="status-pill offline">Offline</span>';
-      statusEl.style.color = 'var(--red)';
-    }
-    if (info.latDec !== undefined && info.lngDec !== undefined) {
-      updateTrapMap(info.latDec, info.lngDec, info.name, info.lat, info.lng);
-    }
   } catch(e) {
-    updateHeaderTrapStatus('offline');
     showToast('Erro ao carregar dados da armadilha', 'error');
   }
 }
@@ -765,7 +1011,7 @@ function loadDayCaptures(dateKeyStr) {
     const maxLevel = captures.reduce((level, cap) => {
       return (severityRank[cap.level] || 0) > (severityRank[level] || 0) ? cap.level : level;
     }, 'low');
-    if (captures.length > 0 && (maxLevel === 'high' || maxLevel === 'med')) {
+    if (totalInsects > 0 && (maxLevel === 'high' || maxLevel === 'med')) {
       container.appendChild(createInfestationAlert(maxLevel, totalInsects, captures.length));
     }
     if (captures.length === 0) {
@@ -792,12 +1038,14 @@ function loadDayCaptures(dateKeyStr) {
       item.innerHTML = `
         <div class="cap-thumb">
           <img class="cap-thumb-img" src="${cap.imageUrl}" alt="Preview">
-          <div class="cap-thumb-num">${cap.count}</div>
+          <div class="cap-thumb-num">${cap.count} novos</div>
         </div>
         <div class="cap-body">
           <div class="cap-time">${cap.time}</div>
           <div class="cap-title">Captura ${idx + 1}</div>
           <div class="cap-chips">
+            <span class="cap-chip new-count">${novosInsetosLabel(Number(cap.count) || 0)}</span>
+            ${rawCountChip(cap)}
             <span class="cap-chip" style="${chipStyle(cap.level)}">${levelLabel[cap.level]}</span>
             <span class="cap-chip" style="color:var(--blue);border-color:rgba(37,99,235,.3);background:var(--blue-dim)">${cap.confidence}% confiança</span>
           </div>
@@ -824,7 +1072,7 @@ function createInfestationAlert(level, totalInsects, captureCount) {
     <div class="alert-body">
       <div class="alert-title">${isHigh ? 'Alerta de infestação' : 'Atenção: pressão de praga'}</div>
       <div class="alert-text">
-        ${totalInsects} ${totalInsects === 1 ? 'inseto detectado' : 'insetos detectados'} em ${captureCount} ${captureCount === 1 ? 'captura' : 'capturas'} neste dia. ${isHigh ? 'Priorize vistoria na área.' : 'Acompanhe a evolução nas próximas capturas.'}
+        ${novosInsetosLabel(totalInsects)} em ${captureCount} ${captureCount === 1 ? 'captura' : 'capturas'} neste dia. ${isHigh ? 'Priorize vistoria na área.' : 'Acompanhe a evolução nas próximas capturas.'}
       </div>
     </div>
   `;
@@ -910,7 +1158,7 @@ function renderRangeSummary() {
           ${r.captures.map((cap, idx) => `
             <div class="rsd-row" onclick="selectRangeCapture('${r.date}', ${idx})">
               <span>${cap.time} — Captura ${idx + 1}</span>
-              <span style="font-weight:700;color:${cap.level==='high'?'var(--red)':cap.level==='med'?'var(--amber)':'var(--green)'}">${cap.count}</span>
+              <span style="font-weight:700;color:${cap.level==='high'?'var(--red)':cap.level==='med'?'var(--amber)':'var(--green)'}">${cap.count} novos</span>
             </div>
           `).join('')}
         </div>
@@ -939,7 +1187,14 @@ function openFullscreenModalWithCapture(cap, idx) {
   modal.classList.add('open');
   const d = new Date(activeDayKey + 'T12:00:00');
   document.getElementById('fullscreenTitle').textContent = `${DAY_NAMES[d.getDay()]}, ${fmtDate(d)} às ${cap.time}`;
-  document.getElementById('fullscreenCount').textContent = `${cap.count} ${cap.count === 1 ? 'inseto' : 'insetos'}`;
+  const rawCount = Number(cap.rawCount);
+  const newCount = Number(cap.count) || 0;
+  const fullscreenCount = document.getElementById('fullscreenCount');
+  fullscreenCount.classList.toggle('zero', newCount === 0);
+  fullscreenCount.classList.toggle('positive', newCount > 0);
+  fullscreenCount.textContent = Number.isFinite(rawCount) && rawCount > newCount
+    ? `${novosInsetosLabel(newCount)} · ${insetosLabel(rawCount)} na imagem`
+    : novosInsetosLabel(newCount);
   document.getElementById('fullscreenConf').textContent = `${cap.confidence}% confiança`;
   
   const levelEl = document.getElementById('fullscreenLevel');
@@ -955,24 +1210,74 @@ function openFullscreenModalWithCapture(cap, idx) {
   nextBtn.disabled = idx === activeDayCaptures.length - 1;
   
   const img = document.getElementById('fullscreenImg');
-  const imgWrapper = document.getElementById('fullscreenImgWrapper');
+  activeBoundingBoxes = Array.isArray(cap.boundingBoxes) ? cap.boundingBoxes : [];
   if (cap.imageUrl) {
+    img.onload = () => renderBoundingBoxes(activeBoundingBoxes);
     img.src = cap.imageUrl;
+    if (img.complete) requestAnimationFrame(() => renderBoundingBoxes(activeBoundingBoxes));
+  } else {
+    renderBoundingBoxes([]);
   }
-  
+}
+
+function normalizeBoundingBox(bb, img) {
+  if (!bb || typeof bb !== 'object') return null;
+
+  const naturalWidth = img.naturalWidth || 1;
+  const naturalHeight = img.naturalHeight || 1;
+  const normX = Number(bb.x ?? bb.left ?? bb.x1);
+  const normY = Number(bb.y ?? bb.top ?? bb.y1);
+  const widthValue = bb.width ?? bb.w ?? (bb.x2 !== undefined && bb.x1 !== undefined ? Number(bb.x2) - Number(bb.x1) : undefined);
+  const heightValue = bb.height ?? bb.h ?? (bb.y2 !== undefined && bb.y1 !== undefined ? Number(bb.y2) - Number(bb.y1) : undefined);
+
+  if (!Number.isFinite(normX) || !Number.isFinite(normY)) return null;
+
+  const x = normX > 1 ? normX / naturalWidth : normX;
+  const y = normY > 1 ? normY / naturalHeight : normY;
+  const width = widthValue === undefined ? null : (Number(widthValue) > 1 ? Number(widthValue) / naturalWidth : Number(widthValue));
+  const height = heightValue === undefined ? null : (Number(heightValue) > 1 ? Number(heightValue) / naturalHeight : Number(heightValue));
+
+  return {
+    x: Math.min(Math.max(x, 0), 1),
+    y: Math.min(Math.max(y, 0), 1),
+    width: width === null ? null : Math.min(Math.max(width, 0), 1),
+    height: height === null ? null : Math.min(Math.max(height, 0), 1),
+  };
+}
+
+function renderBoundingBoxes(boxes) {
+  const img = document.getElementById('fullscreenImg');
+  const imgWrapper = document.getElementById('fullscreenImgWrapper');
+
   imgWrapper.querySelectorAll('.bounding-box').forEach(el => el.remove());
-  
-  if (cap.boundingBoxes) {
-    cap.boundingBoxes.forEach((bb, i) => {
-      const box = document.createElement('div');
-      box.className = 'bounding-box';
-      box.style.left = (bb.x * 100) + '%';
-      box.style.top = (bb.y * 100) + '%';
-      box.style.width = (bb.width * 100) + '%';
-      box.style.height = (bb.height * 100) + '%';
-      imgWrapper.appendChild(box);
-    });
-  }
+
+  if (!img.complete || !img.naturalWidth || !Array.isArray(boxes) || boxes.length === 0) return;
+
+  const wrapperRect = imgWrapper.getBoundingClientRect();
+  const imgRect = img.getBoundingClientRect();
+  const offsetLeft = imgRect.left - wrapperRect.left;
+  const offsetTop = imgRect.top - wrapperRect.top;
+
+  boxes.forEach((bb) => {
+    const normalized = normalizeBoundingBox(bb, img);
+    if (!normalized) return;
+
+    const box = document.createElement('div');
+    const isPoint = normalized.width === null || normalized.height === null || normalized.width === 0 || normalized.height === 0;
+    box.className = `bounding-box${isPoint ? ' point' : ''}`;
+
+    if (isPoint) {
+      box.style.left = `${offsetLeft + normalized.x * imgRect.width}px`;
+      box.style.top = `${offsetTop + normalized.y * imgRect.height}px`;
+    } else {
+      box.style.left = `${offsetLeft + normalized.x * imgRect.width}px`;
+      box.style.top = `${offsetTop + normalized.y * imgRect.height}px`;
+      box.style.width = `${normalized.width * imgRect.width}px`;
+      box.style.height = `${normalized.height * imgRect.height}px`;
+    }
+
+    imgWrapper.appendChild(box);
+  });
 }
 
 function openFullscreenModal() {
@@ -980,6 +1285,7 @@ function openFullscreenModal() {
 
 function closeFullscreenModal() {
   document.getElementById('fullscreenModal').classList.remove('open');
+  setMagnifierEnabled(false);
 }
 
 function closeModal(id) {
@@ -992,33 +1298,25 @@ function handleModalClick(e, id) {
 
 function showCalView() {
   document.getElementById('calContent').style.display = 'block';
-  document.getElementById('mapContent').classList.remove('visible');
+  document.getElementById('reportContent').classList.remove('visible');
   document.getElementById('mptCal').classList.add('active');
-  document.getElementById('mptMap').classList.remove('active');
+  document.getElementById('mptReports').classList.remove('active');
+  document.getElementById('bnCalendar')?.classList.toggle('active', mobileActivePanel === 'calendar');
+  document.getElementById('bnReports')?.classList.remove('active');
+  loadDayCaptures(selectedDay);
 }
 
-function showMapView() {
+function showReportsView() {
   document.getElementById('calContent').style.display = 'none';
-  document.getElementById('mapContent').classList.add('visible');
+  document.getElementById('reportContent').classList.add('visible');
   document.getElementById('mptCal').classList.remove('active');
-  document.getElementById('mptMap').classList.add('active');
-  if (!trapMap) {
-    trapMap = L.map('trapMap').setView([-19.456, -47.972], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(trapMap);
+  document.getElementById('mptReports').classList.add('active');
+  document.getElementById('bnCalendar')?.classList.remove('active');
+  document.getElementById('bnReports')?.classList.toggle('active', mobileActivePanel === 'reports');
+  if (!document.getElementById('reportStart').value || !document.getElementById('reportEnd').value) {
+    setReportPreset('7', false);
   }
-  setTimeout(() => trapMap.invalidateSize(), 100);
-}
-
-function updateTrapMap(lat, lng, name, latStr, lngStr) {
-  if (!trapMap) return;
-  trapMap.eachLayer((layer) => {
-    if (layer instanceof L.Marker) trapMap.removeLayer(layer);
-  });
-  const marker = L.marker([lat, lng]).addTo(trapMap);
-  marker.bindPopup(`<b>${name}</b><br>${latStr}<br>${lngStr}`);
-  trapMap.setView([lat, lng], 14);
+  if (!activeReportData) generateReport();
 }
 
 function previewRangeSelection(shouldFocusCaptures = false) {
@@ -1051,6 +1349,360 @@ function clearRange() {
   document.getElementById('rangeEnd').value = '';
   loadCalendarMonth(calYear, calMonth);
   renderRangeSummary();
+}
+
+function setReportPreset(preset, shouldGenerate = true) {
+  const end = new Date(TODAY);
+  const start = new Date(TODAY);
+
+  if (preset === '7') {
+    start.setDate(end.getDate() - 6);
+  } else if (preset === 'month') {
+    start.setDate(1);
+  }
+
+  document.getElementById('reportStart').value = dateKey(start);
+  document.getElementById('reportEnd').value = dateKey(end);
+  ['7','Today','Month'].forEach(id => {
+    const el = document.getElementById(`reportPreset${id}`);
+    if (el) el.classList.remove('active');
+  });
+  const activeId = preset === 'today' ? 'reportPresetToday' : preset === 'month' ? 'reportPresetMonth' : 'reportPreset7';
+  document.getElementById(activeId)?.classList.add('active');
+
+  if (shouldGenerate) generateReport();
+}
+
+function buildReportMetrics(groups) {
+  let totalNovos = 0;
+  let totalCapturas = 0;
+  let peakDay = 0;
+  let latestCapture = null;
+  let highDays = 0;
+  const rows = [];
+
+  groups.forEach(group => {
+    const dayTotal = group.captures.reduce((sum, cap) => sum + (Number(cap.count) || 0), 0);
+    const rawPeak = group.captures.reduce((max, cap) => Math.max(max, Number(cap.rawCount) || 0), 0);
+    const maxLevel = group.captures.reduce((level, cap) => (
+      (severityRank[cap.level] || 0) > (severityRank[level] || 0) ? cap.level : level
+    ), 'low');
+
+    totalNovos += dayTotal;
+    totalCapturas += group.captures.length;
+    if (dayTotal > peakDay) peakDay = dayTotal;
+    if (maxLevel === 'high') highDays++;
+
+    group.captures.forEach(cap => {
+      latestCapture = { ...cap, date: group.date };
+    });
+
+    rows.push({
+      date: group.date,
+      total: dayTotal,
+      rawPeak,
+      captures: group.captures.length,
+      maxLevel,
+    });
+  });
+
+  return {
+    totalNovos,
+    totalCapturas,
+    peakDay,
+    latestCapture,
+    highDays,
+    days: rows.length,
+    average: rows.length ? (totalNovos / rows.length).toFixed(1) : '0.0',
+    rows,
+  };
+}
+
+async function generateReport() {
+  if (!activeTrapId) return;
+
+  const start = document.getElementById('reportStart').value;
+  const end = document.getElementById('reportEnd').value;
+  if (!start || !end) {
+    showToast('Selecione o período do relatório', 'error');
+    return;
+  }
+
+  const normalized = normalizeRangeDates(start, end);
+  document.getElementById('reportStart').value = normalized.start;
+  document.getElementById('reportEnd').value = normalized.end;
+
+  const mini = document.getElementById('reportMini');
+  mini.innerHTML = '<div class="report-mini-title">Gerando relatório...</div>';
+
+  try {
+    const groups = await API.getCapturesByRange(activeTrapId, normalized.start, normalized.end);
+    const metrics = buildReportMetrics(groups);
+    activeReportData = {
+      trap: activeTrapInfo,
+      start: normalized.start,
+      end: normalized.end,
+      generatedAt: new Date(),
+      groups,
+      metrics,
+    };
+    renderReportPreview(activeReportData);
+  } catch (err) {
+    activeReportData = null;
+    mini.innerHTML = '<div class="report-mini-title">Erro ao gerar relatório</div><div class="report-mini-sub">Tente novamente em alguns instantes.</div>';
+  }
+}
+
+function renderReportPreview(report) {
+  const mini = document.getElementById('reportMini');
+  const { metrics, start, end } = report;
+  const latest = metrics.latestCapture;
+
+  mini.innerHTML = `
+    <div class="report-mini-head">
+      <div>
+        <div class="report-mini-title">${report.trap?.name || activeTrapId}</div>
+        <div class="report-mini-sub">${formatDateKey(start)} a ${formatDateKey(end)}</div>
+      </div>
+      <span class="badge bg">${metrics.totalNovos} novos</span>
+    </div>
+    <div class="report-kpis">
+      <div><strong>${metrics.totalCapturas}</strong><span>Capturas</span></div>
+      <div><strong>${metrics.peakDay}</strong><span>Pico/dia</span></div>
+      <div><strong>${metrics.average}</strong><span>Média</span></div>
+    </div>
+    ${latest?.imageUrl ? `
+      <div class="report-last-image">
+        <img src="${latest.imageUrl}" alt="Última captura do período">
+        <div>
+          <strong>Última imagem</strong>
+          <span>${formatDateKey(latest.date)} às ${latest.time}</span>
+        </div>
+      </div>
+    ` : '<div class="report-mini-sub">Nenhuma imagem encontrada no período.</div>'}
+  `;
+
+  if (document.getElementById('reportContent')?.classList.contains('visible')) {
+    renderReportDetail(report);
+  }
+}
+
+function renderReportDetail(report) {
+  const { metrics, start, end } = report;
+  const latest = metrics.latestCapture;
+  const container = document.getElementById('captureListContainer');
+
+  document.getElementById('capturesTitle').textContent = 'Relatório do Período';
+  document.getElementById('capturesBadge').textContent = `${formatDateKey(start)} a ${formatDateKey(end)}`;
+  document.getElementById('dayHeader').style.display = 'none';
+
+  container.innerHTML = `
+    <div class="report-detail">
+      <div class="report-detail-head">
+        <div>
+          <img src="Logos/logo_preta.png" alt="SPYTRAP">
+          <div>
+            <h3>${report.trap?.name || activeTrapId}</h3>
+            <p>${formatDateKey(start)} a ${formatDateKey(end)}</p>
+          </div>
+        </div>
+        <button class="btn-apply report-print-main" onclick="printReport()">IMPRIMIR</button>
+      </div>
+      <div class="report-detail-kpis">
+        <div><strong>${metrics.totalNovos}</strong><span>Insetos novos</span></div>
+        <div><strong>${metrics.totalCapturas}</strong><span>Capturas</span></div>
+        <div><strong>${metrics.peakDay}</strong><span>Pico diário</span></div>
+        <div><strong>${metrics.average}</strong><span>Média diária</span></div>
+      </div>
+      <div class="report-detail-grid">
+        <div class="report-detail-card">
+          <h4>Resumo</h4>
+          <p><strong>Localização:</strong> ${report.trap?.lat || '—'}, ${report.trap?.lng || '—'}</p>
+          <p><strong>Dias com captura:</strong> ${metrics.days}</p>
+          <p><strong>Dias em nível alto:</strong> ${metrics.highDays}</p>
+          <p>Os totais consideram apenas insetos novos em relação às imagens anteriores.</p>
+        </div>
+        <div class="report-detail-card latest">
+          <h4>Última imagem do período</h4>
+          ${latest?.imageUrl ? `<img src="${latest.imageUrl}" alt="Última captura do período"><p>${formatDateKey(latest.date)} às ${latest.time}</p>` : '<p>Nenhuma imagem registrada no período.</p>'}
+        </div>
+      </div>
+      <div class="report-detail-card">
+        <h4>Detalhamento diário</h4>
+        <div class="report-table-wrap">
+          <table class="report-table">
+            <thead>
+              <tr><th>Data</th><th>Capturas</th><th>Novos</th><th>Maior imagem</th><th>Nível</th></tr>
+            </thead>
+            <tbody>${reportRowsHtml(metrics.rows)}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function formatDateKey(value) {
+  if (!value) return '—';
+  const [year, month, day] = value.split('-');
+  return `${day}/${month}/${year}`;
+}
+
+function levelText(level) {
+  return levelLabel[level] || 'Baixa';
+}
+
+function reportRowsHtml(rows) {
+  if (!rows.length) {
+    return '<tr><td colspan="5">Nenhuma captura registrada no período.</td></tr>';
+  }
+
+  return rows.map(row => `
+    <tr>
+      <td>${formatDateKey(row.date)}</td>
+      <td>${row.captures}</td>
+      <td>${row.total}</td>
+      <td>${row.rawPeak}</td>
+      <td>${levelText(row.maxLevel)}</td>
+    </tr>
+  `).join('');
+}
+
+function printReport() {
+  if (!activeReportData) {
+    generateReport().then(() => {
+      if (activeReportData) printReport();
+    });
+    return;
+  }
+
+  const report = activeReportData;
+  const { metrics } = report;
+  const latest = metrics.latestCapture;
+  const logoUrl = new URL('Logos/logo_preta.png', window.location.href).href;
+  const printWindow = window.open('', '_blank', 'width=1100,height=800');
+  if (!printWindow) {
+    showToast('Permita pop-ups para imprimir o relatório', 'error');
+    return;
+  }
+
+  printWindow.document.write(`
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório SPYTRAP</title>
+  <style>
+    * { box-sizing:border-box; }
+    body { margin:0; padding:28px; color:#102116; font-family:Inter, Arial, sans-serif; background:#fff; }
+    .page { max-width:960px; margin:0 auto; }
+    .top { display:flex; justify-content:space-between; align-items:flex-start; gap:24px; border-bottom:4px solid #16a34a; padding-bottom:18px; }
+    .brand { display:flex; align-items:center; gap:14px; }
+    .brand img { width:72px; height:auto; }
+    .brand h1 { margin:0; font-size:26px; letter-spacing:.4px; }
+    .brand p, .meta p { margin:4px 0 0; color:#55735d; font-size:12px; }
+    .meta { text-align:right; font-size:13px; }
+    .section { margin-top:22px; border:1px solid #dceadf; border-radius:12px; overflow:hidden; }
+    .section h2 { margin:0; padding:12px 14px; font-size:14px; color:#166534; background:#ecfdf3; border-bottom:1px solid #dceadf; text-transform:uppercase; letter-spacing:.8px; }
+    .summary { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:22px; }
+    .kpi { border:1px solid #dceadf; border-radius:12px; padding:14px; background:#f8faf7; }
+    .kpi strong { display:block; color:#15803d; font-size:28px; line-height:1; }
+    .kpi span { display:block; margin-top:8px; color:#55735d; font-size:11px; text-transform:uppercase; letter-spacing:.8px; }
+    .info { display:grid; grid-template-columns:1.1fr .9fr; gap:18px; padding:14px; }
+    .info p { margin:0 0 8px; font-size:13px; }
+    .latest img { width:100%; max-height:300px; object-fit:contain; border:1px solid #dceadf; border-radius:10px; background:#f8faf7; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th { text-align:left; color:#166534; background:#f8faf7; padding:10px; border-bottom:1px solid #dceadf; }
+    td { padding:10px; border-bottom:1px solid #edf4ee; }
+    tr:nth-child(even) td { background:#fbfdfb; }
+    .foot { margin-top:20px; padding-top:12px; border-top:1px solid #dceadf; color:#55735d; font-size:11px; display:flex; justify-content:space-between; }
+    @media print {
+      body { padding:18px; }
+      .section, .kpi, .latest img { break-inside:avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="top">
+      <div class="brand">
+        <img src="${logoUrl}" alt="SPYTRAP">
+        <div>
+          <h1>Relatório SPYTRAP</h1>
+          <p>Monitoramento de pragas com IA</p>
+        </div>
+      </div>
+      <div class="meta">
+        <strong>${report.trap?.name || activeTrapId}</strong>
+        <p>${formatDateKey(report.start)} a ${formatDateKey(report.end)}</p>
+        <p>Gerado em ${report.generatedAt.toLocaleString('pt-BR')}</p>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="kpi"><strong>${metrics.totalNovos}</strong><span>Insetos novos</span></div>
+      <div class="kpi"><strong>${metrics.totalCapturas}</strong><span>Capturas</span></div>
+      <div class="kpi"><strong>${metrics.peakDay}</strong><span>Pico diário</span></div>
+      <div class="kpi"><strong>${metrics.average}</strong><span>Média diária</span></div>
+    </div>
+
+    <div class="section">
+      <h2>Resumo do Período</h2>
+      <div class="info">
+        <div>
+          <p><strong>Armadilha:</strong> ${report.trap?.name || activeTrapId}</p>
+          <p><strong>Localização:</strong> ${report.trap?.lat || '—'}, ${report.trap?.lng || '—'}</p>
+          <p><strong>Dias com captura:</strong> ${metrics.days}</p>
+          <p><strong>Dias em nível alto:</strong> ${metrics.highDays}</p>
+          <p><strong>Observação:</strong> os totais consideram apenas insetos novos, descontando detecções já observadas em fotos anteriores.</p>
+        </div>
+        <div class="latest">
+          ${latest?.imageUrl ? `<img src="${latest.imageUrl}" alt="Última imagem do período"><p><strong>Última imagem:</strong> ${formatDateKey(latest.date)} às ${latest.time}</p>` : '<p>Nenhuma imagem registrada no período.</p>'}
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Detalhamento Diário</h2>
+      <table>
+        <thead>
+          <tr><th>Data</th><th>Capturas</th><th>Insetos novos</th><th>Maior imagem</th><th>Nível</th></tr>
+        </thead>
+        <tbody>${reportRowsHtml(metrics.rows)}</tbody>
+      </table>
+    </div>
+
+    <div class="foot">
+      <span>SPYTRAP - Relatório operacional</span>
+      <span>${report.trap?.id || activeTrapId}</span>
+    </div>
+  </div>
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => { window.print(); }, 300);
+    });
+  <\/script>
+</body>
+</html>`);
+  printWindow.document.close();
+}
+
+function confirmTapeChange() {
+  document.getElementById('tapeChangeModal')?.classList.add('open');
+}
+
+async function doTapeChange() {
+  try {
+    await API.replaceTapeCycle(activeTrapId);
+    closeModal('tapeChangeModal');
+    activeReportData = null;
+    await loadTrapInfo(activeTrapId);
+    await loadCalendarMonth(calYear, calMonth);
+    loadDayCaptures(selectedDay);
+    showToast('Nova fita iniciada com sucesso', 'success');
+  } catch (err) {
+    showToast('Erro ao trocar a fita', 'error');
+  }
 }
 
 function confirmLogout() {

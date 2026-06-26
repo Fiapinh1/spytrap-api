@@ -1,5 +1,9 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
+const {
+  calculateNewInsectsForCycle,
+  ensureActiveTapeCycle,
+} = require('../services/tapeCycles');
 
 const router = express.Router();
 
@@ -101,10 +105,17 @@ router.post('/storage-event', async (req, res) => {
       trapId = trap.id;
     }
 
+    const capturedAt = normalizeTimestamp(capturada_em);
+    const activeCycle = await ensureActiveTapeCycle(supabase, trapId, capturedAt);
+    const totalInsetos = total_insetos != null ? Number(total_insetos) : 0;
+    const insetosNovos = await calculateNewInsectsForCycle(supabase, activeCycle.id, totalInsetos);
+
     const newRecord = {
       armadilha_id: trapId,
-      capturada_em: normalizeTimestamp(capturada_em),
-      total_insetos: total_insetos != null ? Number(total_insetos) : 0,
+      ciclo_fita_id: activeCycle.id,
+      capturada_em: capturedAt,
+      total_insetos: totalInsetos,
+      insetos_novos: insetosNovos,
       nivel: nivel || 'unknown',
       confianca_ia: confianca_ia != null ? Number(confianca_ia) : 0,
       imagem_url: imageName,
@@ -114,7 +125,9 @@ router.post('/storage-event', async (req, res) => {
 
     const { data: inserted, error: insertError } = await supabase
       .from('capturas')
-      .insert([newRecord]);
+      .insert([newRecord])
+      .select('*')
+      .single();
 
     if (insertError) {
       throw insertError;
@@ -122,7 +135,7 @@ router.post('/storage-event', async (req, res) => {
 
     return res.status(201).json({
       message: 'Captura criada com sucesso.',
-      captura: inserted?.[0] || null,
+      captura: inserted || null,
     });
   } catch (err) {
     console.error('POST /api/capturas/storage-event:', err.message || err);

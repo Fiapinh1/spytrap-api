@@ -1,6 +1,7 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const authMiddleware = require('../middleware/authMiddleware');
+const { ensureActiveTapeCycle } = require('../services/tapeCycles');
 
 const router = express.Router();
 const supabase = createClient(
@@ -17,6 +18,10 @@ function calcTendencia(porDia) {
   if (segundaM > primeiraM * 1.1) return 'subindo';
   if (segundaM < primeiraM * 0.9) return 'caindo';
   return 'estável';
+}
+
+function novosInsetos(item) {
+  return Number(item.insetos_novos ?? item.total_insetos) || 0;
 }
 
 router.get('/summary', authMiddleware, async (req, res) => {
@@ -38,24 +43,25 @@ router.get('/summary', authMiddleware, async (req, res) => {
       .single();
 
     if (!trap) return res.status(404).json({ error: 'nao_encontrada' });
+    const activeCycle = await ensureActiveTapeCycle(supabase, trap.id);
 
     const { data: capturas } = await supabase
       .from('capturas')
-      .select('capturada_em, total_insetos, nivel, confianca_ia')
+      .select('capturada_em, total_insetos, insetos_novos, nivel, confianca_ia')
       .eq('armadilha_id', trap.id)
       .gte('capturada_em', `${startDate}T00:00:00Z`)
       .lte('capturada_em', `${endDate}T23:59:59Z`)
       .order('capturada_em', { ascending: true });
 
     const caps = capturas || [];
-    const totalInsetos = caps.reduce((soma, item) => soma + item.total_insetos, 0);
-    const picoInsetos = caps.length ? Math.max(...caps.map((item) => item.total_insetos)) : 0;
+    const totalInsetos = caps.reduce((soma, item) => soma + novosInsetos(item), 0);
+    const picoInsetos = caps.length ? Math.max(...caps.map(novosInsetos)) : 0;
     const capturasAlta = caps.filter((item) => item.nivel === 'high');
     const porDia = {};
 
     caps.forEach((cap) => {
       const dia = cap.capturada_em.substring(0, 10);
-      porDia[dia] = (porDia[dia] || 0) + cap.total_insetos;
+      porDia[dia] = (porDia[dia] || 0) + novosInsetos(cap);
     });
 
     const diasMonitorados = Object.keys(porDia).length;
@@ -64,12 +70,12 @@ router.get('/summary', authMiddleware, async (req, res) => {
       : 0;
 
     const top5 = [...caps]
-      .sort((a, b) => b.total_insetos - a.total_insetos)
+      .sort((a, b) => novosInsetos(b) - novosInsetos(a))
       .slice(0, 5)
       .map((item) => ({
         data: item.capturada_em.substring(0, 10),
         hora: item.capturada_em.substring(11, 16),
-        total: item.total_insetos,
+        total: novosInsetos(item),
         nivel: item.nivel,
         confianca: item.confianca_ia,
       }));
@@ -124,13 +130,14 @@ router.get('/comparison', authMiddleware, async (req, res) => {
     const resultados = await Promise.all((armadilhas || []).map(async (trap) => {
       const { data: caps } = await supabase
         .from('capturas')
-        .select('capturada_em, total_insetos, nivel')
+        .select('capturada_em, total_insetos, insetos_novos, nivel')
         .eq('armadilha_id', trap.id)
+        .eq('ciclo_fita_id', (await ensureActiveTapeCycle(supabase, trap.id)).id)
         .gte('capturada_em', `${startDate}T00:00:00Z`)
         .lte('capturada_em', `${endDate}T23:59:59Z`);
 
       const lista = caps || [];
-      const totalInsetos = lista.reduce((soma, item) => soma + item.total_insetos, 0);
+      const totalInsetos = lista.reduce((soma, item) => soma + novosInsetos(item), 0);
       const diasSet = new Set(lista.map((item) => item.capturada_em.substring(0, 10)));
 
       return {
@@ -170,10 +177,11 @@ router.get('/captures', authMiddleware, async (req, res) => {
       .single();
 
     if (!trap) return res.status(404).json({ error: 'nao_encontrada' });
+    const activeCycle = await ensureActiveTapeCycle(supabase, trap.id);
 
     const { data: caps } = await supabase
       .from('capturas')
-      .select('capturada_em, total_insetos, nivel, confianca_ia, imagem_url')
+      .select('capturada_em, total_insetos, insetos_novos, nivel, confianca_ia, imagem_url')
       .eq('armadilha_id', trap.id)
       .gte('capturada_em', `${startDate}T00:00:00Z`)
       .lte('capturada_em', `${endDate}T23:59:59Z`)
@@ -184,7 +192,8 @@ router.get('/captures', authMiddleware, async (req, res) => {
       captures: (caps || []).map((item) => ({
         data: item.capturada_em.substring(0, 10),
         hora: item.capturada_em.substring(11, 16),
-        insetos: item.total_insetos,
+        insetos: novosInsetos(item),
+        insetos_visiveis: item.total_insetos,
         nivel: item.nivel,
         confianca: item.confianca_ia,
         imagem: item.imagem_url,

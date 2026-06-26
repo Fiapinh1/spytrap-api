@@ -1,6 +1,10 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const authMiddleware = require('../middleware/authMiddleware');
+const {
+  ensureActiveTapeCycle,
+  replaceActiveTapeCycle,
+} = require('../services/tapeCycles');
 
 const router = express.Router();
 
@@ -140,17 +144,121 @@ function faixaUtcDoDiaLocal(dateKey) {
 
 function formatarCaptura(row) {
   const data = new Date(row.capturada_em);
+  const rawCount = Number(row.total_insetos) || 0;
+  const storedNewCount = row.insetos_novos ?? row.total_insetos_novos;
+  const newCount = storedNewCount === undefined
+    ? rawCount
+    : Number(storedNewCount) || 0;
 
   return {
     id: row.id,
+    cycleId: row.ciclo_fita_id || null,
+    date: dateKeyNoFuso(data),
     time: horaDaCaptura(row.capturada_em, data),
-    count: row.total_insetos,
+    count: newCount,
+    rawCount,
     level: row.nivel,
     confidence: row.confianca_ia === null || row.confianca_ia === undefined
       ? null
       : Math.round(Number(row.confianca_ia)),
     imageUrl: normalizarImagemUrl(row.imagem_url),
     boundingBoxes: Array.isArray(row.bounding_boxes) ? row.bounding_boxes : [],
+  };
+}
+
+function aplicarContagemIncremental(capturas, maiorTotalInicial = 0) {
+  let maiorTotalConhecido = Number(maiorTotalInicial) || 0;
+
+  return (capturas || []).map((captura) => {
+    if (captura.insetos_novos !== undefined && captura.insetos_novos !== null) {
+      return {
+        ...captura,
+        total_insetos_novos: Number(captura.insetos_novos) || 0,
+      };
+    }
+
+    const totalAtual = Number(captura.total_insetos) || 0;
+    const totalNovos = Math.max(totalAtual - maiorTotalConhecido, 0);
+
+    maiorTotalConhecido = Math.max(maiorTotalConhecido, totalAtual);
+
+    return {
+      ...captura,
+      total_insetos_novos: totalNovos,
+    };
+  });
+}
+
+function somarNovosInsetosPorDia(capturas, maiorTotalInicial = 0) {
+  const porDia = {};
+
+  for (const captura of aplicarContagemIncremental(capturas, maiorTotalInicial)) {
+    const dia = dateKeyNoFuso(new Date(captura.capturada_em));
+    porDia[dia] = (porDia[dia] || 0) + (Number(captura.total_insetos_novos) || 0);
+  }
+
+  return porDia;
+}
+
+function classificarInfestacaoPorSoma(soma) {
+  if (soma <= 3) {
+    return { level: 'low', label: 'Baixa' };
+  }
+
+  if (soma <= 6) {
+    return { level: 'med', label: 'Média' };
+  }
+
+  return { level: 'high', label: 'Alta' };
+}
+
+function calcularInfestacaoUltimosTresDias(capturas) {
+  const porDia = somarNovosInsetosPorDia(capturas || []);
+  const dias = Object.keys(porDia).sort().slice(-3);
+  const sum = dias.reduce((total, dia) => total + (porDia[dia] || 0), 0);
+  const classification = classificarInfestacaoPorSoma(sum);
+
+  return {
+    ...classification,
+    sum,
+    daysAvailable: dias.length,
+    daysRequired: 3,
+    insufficientData: dias.length < 3,
+    days: dias.map((date) => ({
+      date,
+      count: porDia[date] || 0,
+    })),
+  };
+}
+
+function formatarCicloFita(ciclo, capturas = []) {
+  if (!ciclo) return null;
+
+  const porDia = somarNovosInsetosPorDia(capturas);
+  const dias = Object.keys(porDia).sort();
+  let maiorSomaTresDias = 0;
+
+  for (let i = 0; i < dias.length; i++) {
+    const janela = dias.slice(Math.max(0, i - 2), i + 1);
+    const soma = janela.reduce((total, dia) => total + (porDia[dia] || 0), 0);
+    if (soma > maiorSomaTresDias) maiorSomaTresDias = soma;
+  }
+
+  const inicio = new Date(ciclo.iniciado_em);
+  const fim = ciclo.encerrado_em ? new Date(ciclo.encerrado_em) : new Date();
+  const diasEmUso = Math.max(1, Math.ceil((fim - inicio) / 86400000));
+  const total = Object.values(porDia).reduce((sum, value) => sum + value, 0);
+  const maxClassification = classificarInfestacaoPorSoma(maiorSomaTresDias);
+
+  return {
+    id: ciclo.id,
+    status: ciclo.status,
+    startedAt: ciclo.iniciado_em,
+    endedAt: ciclo.encerrado_em,
+    daysInUse: diasEmUso,
+    total,
+    maxThreeDaySum: maiorSomaTresDias,
+    maxClassification,
   };
 }
 
@@ -196,6 +304,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }
 
     const trap = formatarArmadilha(row);
+    const activeCycle = await ensureActiveTapeCycle(supabase, row.id, new Date().toISOString());
     const agora = new Date();
     const inicioMes = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1));
     const inicioProxMes = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth() + 1, 1));
@@ -203,37 +312,68 @@ router.get('/:id', authMiddleware, async (req, res) => {
     const [
       { data: ultimaCaptura, error: erroUltima },
       { data: capturasMes, error: erroMes },
+      { data: capturasInfestacao, error: erroInfestacao },
+      { data: ciclos, error: erroCiclos },
+      { data: capturasCiclos, error: erroCapturasCiclos },
     ] = await Promise.all([
       supabase
         .from('capturas')
-        .select('id, capturada_em, total_insetos, nivel, confianca_ia, imagem_url, bounding_boxes')
+        .select('id, ciclo_fita_id, capturada_em, total_insetos, insetos_novos, nivel, confianca_ia, imagem_url, bounding_boxes')
         .eq('armadilha_id', row.id)
         .order('capturada_em', { ascending: false })
         .limit(1)
         .maybeSingle(),
       supabase
         .from('capturas')
-        .select('capturada_em, total_insetos')
+        .select('capturada_em, total_insetos, insetos_novos')
         .eq('armadilha_id', row.id)
+        .eq('ciclo_fita_id', activeCycle.id)
         .gte('capturada_em', inicioMes.toISOString())
         .lt('capturada_em', inicioProxMes.toISOString()),
+      supabase
+        .from('capturas')
+        .select('capturada_em, total_insetos, insetos_novos')
+        .eq('armadilha_id', row.id)
+        .eq('ciclo_fita_id', activeCycle.id)
+        .order('capturada_em', { ascending: true }),
+      supabase
+        .from('ciclos_fita')
+        .select('*')
+        .eq('armadilha_id', row.id)
+        .order('iniciado_em', { ascending: false }),
+      supabase
+        .from('capturas')
+        .select('ciclo_fita_id, capturada_em, total_insetos, insetos_novos')
+        .eq('armadilha_id', row.id)
+        .order('capturada_em', { ascending: true }),
     ]);
 
     if (erroUltima) throw erroUltima;
     if (erroMes) throw erroMes;
+    if (erroInfestacao) throw erroInfestacao;
+    if (erroCiclos) throw erroCiclos;
+    if (erroCapturasCiclos) throw erroCapturasCiclos;
 
-    const somaPorDia = {};
-    for (const captura of capturasMes || []) {
-      const dia = dateKeyNoFuso(new Date(captura.capturada_em));
-      somaPorDia[dia] = (somaPorDia[dia] || 0) + (captura.total_insetos || 0);
-    }
+    const somaPorDia = somarNovosInsetosPorDia(capturasMes || []);
+    const infestation = calcularInfestacaoUltimosTresDias(capturasInfestacao || []);
+    const capturasPorCiclo = (capturasCiclos || []).reduce((acc, captura) => {
+      if (!captura.ciclo_fita_id) return acc;
+      acc[captura.ciclo_fita_id] ||= [];
+      acc[captura.ciclo_fita_id].push(captura);
+      return acc;
+    }, {});
+    const tapeCycles = (ciclos || []).map((ciclo) => formatarCicloFita(ciclo, capturasPorCiclo[ciclo.id] || []));
 
     return res.json({
       ...trap,
       lastCapture: formatarUltimaCaptura(ultimaCaptura),
-      monthTotal: (capturasMes || []).reduce((total, captura) => total + (captura.total_insetos || 0), 0),
+      latestCapture: ultimaCaptura ? formatarCaptura(ultimaCaptura) : null,
+      monthTotal: Object.values(somaPorDia).reduce((total, valor) => total + valor, 0),
       peakDay: Object.keys(somaPorDia).length ? Math.max(...Object.values(somaPorDia)) : 0,
       monthCaptures: (capturasMes || []).length,
+      infestation,
+      activeTapeCycle: formatarCicloFita(activeCycle, capturasPorCiclo[activeCycle.id] || []),
+      tapeCycleHistory: tapeCycles.filter((cycle) => cycle.id !== activeCycle.id),
     });
   } catch (err) {
     console.error(`GET /traps/${req.params.id}:`, err.message);
@@ -255,19 +395,20 @@ router.get('/:id/captures', authMiddleware, async (req, res) => {
     }
 
     const { date, startDate, endDate } = req.query;
+    const activeCycle = await ensureActiveTapeCycle(supabase, trap.id, new Date().toISOString());
 
     if (date) {
       const { inicioIso, fimIso } = faixaUtcDoDiaLocal(date);
       const { data, error } = await supabase
         .from('capturas')
-        .select('id, capturada_em, total_insetos, nivel, confianca_ia, imagem_url, bounding_boxes')
+        .select('id, ciclo_fita_id, capturada_em, total_insetos, insetos_novos, nivel, confianca_ia, imagem_url, bounding_boxes')
         .eq('armadilha_id', trap.id)
         .gte('capturada_em', inicioIso)
         .lte('capturada_em', fimIso)
         .order('capturada_em', { ascending: true });
 
       if (error) throw error;
-      return res.json((data || []).map(formatarCaptura));
+      return res.json(aplicarContagemIncremental(data || []).map(formatarCaptura));
     }
 
     if (!startDate || !endDate) {
@@ -281,7 +422,7 @@ router.get('/:id/captures', authMiddleware, async (req, res) => {
     const fimFaixa = faixaUtcDoDiaLocal(endDate).fimIso;
     const { data, error } = await supabase
       .from('capturas')
-      .select('id, capturada_em, total_insetos, nivel, confianca_ia, imagem_url, bounding_boxes')
+      .select('id, ciclo_fita_id, capturada_em, total_insetos, insetos_novos, nivel, confianca_ia, imagem_url, bounding_boxes')
       .eq('armadilha_id', trap.id)
       .gte('capturada_em', inicioFaixa)
       .lte('capturada_em', fimFaixa)
@@ -290,7 +431,7 @@ router.get('/:id/captures', authMiddleware, async (req, res) => {
     if (error) throw error;
 
     const agrupado = {};
-    for (const captura of data || []) {
+    for (const captura of aplicarContagemIncremental(data || [])) {
       const dia = dateKeyNoFuso(new Date(captura.capturada_em));
       agrupado[dia] ||= [];
       agrupado[dia].push(formatarCaptura(captura));
@@ -322,6 +463,7 @@ router.get('/:id/calendar', authMiddleware, async (req, res) => {
         message: `Armadilha "${req.params.id}" não encontrada.`,
       });
     }
+    const activeCycle = await ensureActiveTapeCycle(supabase, trap.id, new Date().toISOString());
 
     const year = Number(req.query.year);
     const month = Number(req.query.month);
@@ -336,23 +478,44 @@ router.get('/:id/calendar', authMiddleware, async (req, res) => {
     const inicio = new Date(Date.UTC(year, month - 1, 1));
     const fim = new Date(Date.UTC(year, month, 1));
 
-    const { data, error } = await supabase
-      .from('capturas')
-      .select('capturada_em, nivel')
-      .eq('armadilha_id', trap.id)
-      .gte('capturada_em', inicio.toISOString())
-      .lt('capturada_em', fim.toISOString())
-      .order('capturada_em', { ascending: true });
+    // Fetch both captures AND tape cycles
+    const [
+      { data: captures, error: capErr },
+      { data: cycles, error: cycleErr }
+    ] = await Promise.all([
+      supabase
+        .from('capturas')
+        .select('capturada_em, total_insetos, insetos_novos, nivel')
+        .eq('armadilha_id', trap.id)
+        .gte('capturada_em', inicio.toISOString())
+        .lt('capturada_em', fim.toISOString())
+        .order('capturada_em', { ascending: true }),
+      supabase
+        .from('ciclos_fita')
+        .select('iniciado_em')
+        .eq('armadilha_id', trap.id)
+        .gte('iniciado_em', inicio.toISOString())
+        .lt('iniciado_em', fim.toISOString())
+        .order('iniciado_em', { ascending: true })
+    ]);
 
-    if (error) throw error;
+    if (capErr) throw capErr;
+    if (cycleErr) throw cycleErr;
 
     const porDia = {};
-    for (const captura of data || []) {
+    for (const captura of aplicarContagemIncremental(captures || [])) {
       const dia = dateKeyNoFuso(new Date(captura.capturada_em));
-      if (!porDia[dia]) porDia[dia] = { date: dia, count: 0, maxLevel: 'low' };
-      porDia[dia].count += 1;
+      if (!porDia[dia]) porDia[dia] = { date: dia, count: 0, maxLevel: 'low', isTapeChange: false };
+      porDia[dia].count += Number(captura.total_insetos_novos) || 0;
       if (captura.nivel === 'high') porDia[dia].maxLevel = 'high';
       else if (captura.nivel === 'med' && porDia[dia].maxLevel !== 'high') porDia[dia].maxLevel = 'med';
+    }
+
+    // Mark tape change days
+    for (const cycle of cycles || []) {
+      const dia = dateKeyNoFuso(new Date(cycle.iniciado_em));
+      if (!porDia[dia]) porDia[dia] = { date: dia, count: 0, maxLevel: 'low', isTapeChange: true };
+      else porDia[dia].isTapeChange = true;
     }
 
     return res.json(Object.values(porDia).sort((a, b) => a.date.localeCompare(b.date)));
@@ -361,6 +524,34 @@ router.get('/:id/calendar', authMiddleware, async (req, res) => {
     return res.status(500).json({
       error: 'erro_servidor',
       message: 'Erro ao buscar calendário da armadilha.',
+    });
+  }
+});
+
+router.post('/:id/tape-cycle/replace', authMiddleware, async (req, res) => {
+  try {
+    const trap = await buscarArmadilhaAtivaPorIdentificador(req.params.id);
+    if (!trap) {
+      return res.status(404).json({
+        error: 'nao_encontrada',
+        message: `Armadilha "${req.params.id}" nÃ£o encontrada.`,
+      });
+    }
+
+    const changedAt = new Date().toISOString();
+    const result = await replaceActiveTapeCycle(supabase, trap.id, changedAt);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Nova fita iniciada com sucesso.',
+      previous: result.previous ? formatarCicloFita(result.previous, []) : null,
+      current: formatarCicloFita(result.current, []),
+    });
+  } catch (err) {
+    console.error(`POST /traps/${req.params.id}/tape-cycle/replace:`, err.message);
+    return res.status(500).json({
+      error: 'erro_servidor',
+      message: 'Erro ao trocar a fita da armadilha.',
     });
   }
 });

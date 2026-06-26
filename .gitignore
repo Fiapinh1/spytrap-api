@@ -1,2 +1,6 @@
 ﻿.env
+.env.local
 node_modules/
+backups/
+.codex/
+.agents/

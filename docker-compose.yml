@@ -1,0 +1,13 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    working_dir: /workspace
+    volumes:
+      - ./sql:/workspace/sql
+    entrypoint: ["sh", "-lc"]
+    command: >
+      'test -n "$$DATABASE_URL" ||
+      (echo "DATABASE_URL nao definido no .env" && exit 1);
+      psql "$$DATABASE_URL"'
