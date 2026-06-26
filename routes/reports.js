@@ -1,7 +1,6 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const authMiddleware = require('../middleware/authMiddleware');
-const { ensureActiveTapeCycle } = require('../services/tapeCycles');
 
 const router = express.Router();
 const supabase = createClient(
@@ -43,7 +42,6 @@ router.get('/summary', authMiddleware, async (req, res) => {
       .single();
 
     if (!trap) return res.status(404).json({ error: 'nao_encontrada' });
-    const activeCycle = await ensureActiveTapeCycle(supabase, trap.id);
 
     const { data: capturas } = await supabase
       .from('capturas')
@@ -132,7 +130,6 @@ router.get('/comparison', authMiddleware, async (req, res) => {
         .from('capturas')
         .select('capturada_em, total_insetos, insetos_novos, nivel')
         .eq('armadilha_id', trap.id)
-        .eq('ciclo_fita_id', (await ensureActiveTapeCycle(supabase, trap.id)).id)
         .gte('capturada_em', `${startDate}T00:00:00Z`)
         .lte('capturada_em', `${endDate}T23:59:59Z`);
 
@@ -177,7 +174,6 @@ router.get('/captures', authMiddleware, async (req, res) => {
       .single();
 
     if (!trap) return res.status(404).json({ error: 'nao_encontrada' });
-    const activeCycle = await ensureActiveTapeCycle(supabase, trap.id);
 
     const { data: caps } = await supabase
       .from('capturas')

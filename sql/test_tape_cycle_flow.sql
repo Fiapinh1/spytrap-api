@@ -39,16 +39,13 @@ select
 from public.capturas
 where ciclo_fita_id = :'ciclo_id';
 
-update public.ciclos_fita
-set
-  status = 'encerrado',
-  encerrado_em = '2026-06-28 08:00:00+00',
-  atualizado_em = '2026-06-28 08:00:00+00'
-where id = :'ciclo_id';
+select public.registrar_troca_fita(
+  :'armadilha_id',
+  '2026-06-26 08:00:00+00',
+  'troca retroativa de teste'
+) as resultado_troca \gset
 
-insert into public.ciclos_fita (armadilha_id, iniciado_em, status)
-values (:'armadilha_id', '2026-06-28 08:00:00+00', 'ativo')
-returning id as novo_ciclo_id \gset
+select :'resultado_troca'::jsonb -> 'current' ->> 'id' as novo_ciclo_id \gset
 
 select
   count(*) filter (where status = 'ativo') as ciclos_ativos,
@@ -60,5 +57,29 @@ select
   count(*) as capturas_preservadas_no_ciclo_anterior
 from public.capturas
 where ciclo_fita_id = :'ciclo_id';
+
+select
+  count(*) as capturas_realocadas_novo_ciclo,
+  sum(insetos_novos) as soma_novo_ciclo
+from public.capturas
+where ciclo_fita_id = :'novo_ciclo_id';
+
+select set_config('app.test_armadilha_id', :'armadilha_id', true);
+
+do $$
+begin
+  perform public.registrar_troca_fita(
+    current_setting('app.test_armadilha_id')::uuid,
+    '2026-06-25 12:00:00+00',
+    'deve bloquear por ciclo posterior'
+  );
+  raise exception 'falha: conflito esperado nao ocorreu';
+exception
+  when others then
+    if sqlerrm not like '%conflito_ciclo_posterior%' then
+      raise;
+    end if;
+end;
+$$;
 
 rollback;

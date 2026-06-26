@@ -3,7 +3,7 @@ const { createClient } = require('@supabase/supabase-js');
 const authMiddleware = require('../middleware/authMiddleware');
 const {
   ensureActiveTapeCycle,
-  replaceActiveTapeCycle,
+  registerTapeChange,
 } = require('../services/tapeCycles');
 
 const router = express.Router();
@@ -142,6 +142,39 @@ function faixaUtcDoDiaLocal(dateKey) {
   };
 }
 
+function erroTrocaFita(error) {
+  const mensagem = error?.message || '';
+  if (mensagem.includes('conflito_ciclo_posterior')) {
+    return {
+      status: 409,
+      error: 'conflito_ciclo_posterior',
+      message: 'Existe uma troca de fita posterior a essa data. Nenhuma alteração foi feita.',
+    };
+  }
+  if (mensagem.includes('ja_existe_ciclo_neste_horario')) {
+    return {
+      status: 409,
+      error: 'ciclo_duplicado',
+      message: 'Já existe uma troca de fita registrada exatamente nesse horário.',
+    };
+  }
+  if (mensagem.includes('ciclo_anterior_nao_encontrado')) {
+    return {
+      status: 422,
+      error: 'ciclo_anterior_nao_encontrado',
+      message: 'Não foi encontrado um ciclo anterior para essa data de troca.',
+    };
+  }
+  if (mensagem.includes('data_troca_obrigatoria')) {
+    return {
+      status: 422,
+      error: 'data_troca_obrigatoria',
+      message: 'Informe data e hora válidas para a troca de fita.',
+    };
+  }
+  return null;
+}
+
 function formatarCaptura(row) {
   const data = new Date(row.capturada_em);
   const rawCount = Number(row.total_insetos) || 0;
@@ -255,11 +288,19 @@ function formatarCicloFita(ciclo, capturas = []) {
     status: ciclo.status,
     startedAt: ciclo.iniciado_em,
     endedAt: ciclo.encerrado_em,
+    note: ciclo.observacao || null,
     daysInUse: diasEmUso,
     total,
     maxThreeDaySum: maiorSomaTresDias,
     maxClassification,
   };
+}
+
+function cicloVazioSemUso(ciclo, capturas = []) {
+  if (!ciclo?.encerrado_em || ciclo.status !== 'encerrado') return false;
+  const inicio = new Date(ciclo.iniciado_em).getTime();
+  const fim = new Date(ciclo.encerrado_em).getTime();
+  return inicio === fim && (!capturas || capturas.length === 0);
 }
 
 async function buscarArmadilhaAtivaPorIdentificador(identificador) {
@@ -362,7 +403,9 @@ router.get('/:id', authMiddleware, async (req, res) => {
       acc[captura.ciclo_fita_id].push(captura);
       return acc;
     }, {});
-    const tapeCycles = (ciclos || []).map((ciclo) => formatarCicloFita(ciclo, capturasPorCiclo[ciclo.id] || []));
+    const tapeCycles = (ciclos || [])
+      .filter((ciclo) => !cicloVazioSemUso(ciclo, capturasPorCiclo[ciclo.id] || []))
+      .map((ciclo) => formatarCicloFita(ciclo, capturasPorCiclo[ciclo.id] || []));
 
     return res.json({
       ...trap,
@@ -492,7 +535,7 @@ router.get('/:id/calendar', authMiddleware, async (req, res) => {
         .order('capturada_em', { ascending: true }),
       supabase
         .from('ciclos_fita')
-        .select('iniciado_em')
+        .select('id, iniciado_em, encerrado_em, status, observacao')
         .eq('armadilha_id', trap.id)
         .gte('iniciado_em', inicio.toISOString())
         .lt('iniciado_em', fim.toISOString())
@@ -505,7 +548,7 @@ router.get('/:id/calendar', authMiddleware, async (req, res) => {
     const porDia = {};
     for (const captura of aplicarContagemIncremental(captures || [])) {
       const dia = dateKeyNoFuso(new Date(captura.capturada_em));
-      if (!porDia[dia]) porDia[dia] = { date: dia, count: 0, maxLevel: 'low', isTapeChange: false };
+      if (!porDia[dia]) porDia[dia] = { date: dia, count: 0, maxLevel: 'low', isTapeChange: false, tapeChanges: [] };
       porDia[dia].count += Number(captura.total_insetos_novos) || 0;
       if (captura.nivel === 'high') porDia[dia].maxLevel = 'high';
       else if (captura.nivel === 'med' && porDia[dia].maxLevel !== 'high') porDia[dia].maxLevel = 'med';
@@ -513,9 +556,21 @@ router.get('/:id/calendar', authMiddleware, async (req, res) => {
 
     // Mark tape change days
     for (const cycle of cycles || []) {
+      if (cicloVazioSemUso(cycle, [])) continue;
       const dia = dateKeyNoFuso(new Date(cycle.iniciado_em));
-      if (!porDia[dia]) porDia[dia] = { date: dia, count: 0, maxLevel: 'low', isTapeChange: true };
-      else porDia[dia].isTapeChange = true;
+      const item = {
+        id: cycle.id,
+        at: cycle.iniciado_em,
+        time: horaDaCaptura(cycle.iniciado_em),
+        note: cycle.observacao || null,
+      };
+      if (!porDia[dia]) {
+        porDia[dia] = { date: dia, count: 0, maxLevel: 'low', isTapeChange: true, tapeChanges: [item] };
+      } else {
+        porDia[dia].isTapeChange = true;
+        porDia[dia].tapeChanges ||= [];
+        porDia[dia].tapeChanges.push(item);
+      }
     }
 
     return res.json(Object.values(porDia).sort((a, b) => a.date.localeCompare(b.date)));
@@ -538,16 +593,38 @@ router.post('/:id/tape-cycle/replace', authMiddleware, async (req, res) => {
       });
     }
 
-    const changedAt = new Date().toISOString();
-    const result = await replaceActiveTapeCycle(supabase, trap.id, changedAt);
+    const requestedAt = req.body?.effectiveAt || new Date().toISOString();
+    const changedAtDate = new Date(requestedAt);
+    if (Number.isNaN(changedAtDate.getTime())) {
+      return res.status(422).json({
+        error: 'data_troca_invalida',
+        message: 'Informe uma data/hora de troca válida.',
+      });
+    }
+
+    const result = await registerTapeChange(
+      supabase,
+      trap.id,
+      changedAtDate.toISOString(),
+      req.body?.note || null
+    );
 
     return res.status(201).json({
       success: true,
       message: 'Nova fita iniciada com sucesso.',
       previous: result.previous ? formatarCicloFita(result.previous, []) : null,
       current: formatarCicloFita(result.current, []),
+      movedCaptures: result.movedCaptures,
     });
   } catch (err) {
+    const handled = erroTrocaFita(err);
+    if (handled) {
+      return res.status(handled.status).json({
+        error: handled.error,
+        message: handled.message,
+      });
+    }
+
     console.error(`POST /traps/${req.params.id}/tape-cycle/replace:`, err.message);
     return res.status(500).json({
       error: 'erro_servidor',

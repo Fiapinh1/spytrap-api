@@ -46,10 +46,13 @@
 | `iniciado_em` | `timestamptz` |  |
 | `encerrado_em` | `timestamptz` |  Nullable |
 | `status` | `text` |  `ativo` ou `encerrado` |
+| `observacao` | `text` | Nullable |
 | `criado_em` | `timestamptz` |  |
 | `atualizado_em` | `timestamptz` |  |
 
 Observação: há índice único parcial para permitir apenas um ciclo `ativo` por armadilha.
+Trocas retroativas devem usar a função `public.registrar_troca_fita`, que valida conflitos, cria o novo ciclo e recalcula `capturas.insetos_novos` sem apagar registros.
+Capturas sem ciclo ou inseridas fora do backend podem ser corrigidas com `public.recalcular_capturas_ciclos`; novas inserções também são protegidas pelo trigger `trg_preparar_captura_ciclo`.
 
 ## Table `usuarios`
 

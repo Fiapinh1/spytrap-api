@@ -23,6 +23,19 @@
   </a>
   <div class="header-right">
     <img class="br-flag" src="Logos/bandeira_brasil.png" alt="Brasil" title="Brasil">
+    <div class="notification-wrap">
+      <button class="notification-btn" id="notificationBtn" onclick="toggleNotifications()" type="button" title="Notificações" aria-label="Abrir notificações">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/>
+        </svg>
+        <span class="notification-count" id="notificationCount" style="display:none">0</span>
+      </button>
+      <div class="notification-menu" id="notificationMenu">
+        <div class="notification-menu-title">Eventos da armadilha</div>
+        <div id="notificationList" class="notification-list"></div>
+      </div>
+    </div>
     <div class="clock-badge" id="clock">--:--:--</div>
     <button class="btn-logout" onclick="confirmLogout()">
       <span style="display:flex;align-items:center">
@@ -72,7 +85,7 @@
     </div>
   </div>
   <div class="trap-details">
-    <div class="trap-field">
+    <div class="trap-field trap-field-location">
       <div class="label">Localização</div>
       <div class="trap-field-val coords" id="trapCoords">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -82,25 +95,26 @@
         <span id="trapCoordsText">—</span>
       </div>
     </div>
-    <div class="trap-field">
+    <div class="trap-field trap-field-latest">
       <div class="label">Última captura</div>
       <button class="last-capture-thumb" id="lastCaptureThumb" onclick="openLatestCapture()" title="Abrir última captura" type="button" style="display:none">
         <img id="lastCaptureImg" alt="Última captura">
       </button>
       <div class="trap-field-val" id="trapLastCap">—</div>
     </div>
-    <div class="trap-field">
+    <div class="trap-field trap-field-infestation">
       <div class="label">Infestação 3 dias</div>
       <div class="trap-field-val infestation-summary" id="trapInfestation">
         <span class="infestation-pill low">Classificação: Baixa</span>
         <span class="infestation-total">Somatório dos últimos 3 dias: —</span>
       </div>
     </div>
-    <div class="trap-field">
+    <div class="trap-field trap-field-species">
       <div class="label">Praga alvo</div>
       <div class="trap-field-val species">Diatraea saccharalis</div>
     </div>
   </div>
+  <div class="trap-mobile-species">Diatraea saccharalis</div>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -316,7 +330,24 @@
       </svg>
     </div>
     <div class="logout-title">Iniciar nova fita?</div>
-    <div class="logout-sub">A contagem atual será encerrada,<br>mas o histórico será mantido.</div>
+    <div class="logout-sub">Informe quando a troca aconteceu.<br>As capturas antigas continuam no histórico.</div>
+    <div class="tape-form">
+      <label>
+        <span>Data da troca</span>
+        <input type="date" id="tapeChangeDate">
+      </label>
+      <label>
+        <span>Hora da troca</span>
+        <input type="time" id="tapeChangeTime">
+      </label>
+      <label class="tape-note-field">
+        <span>Observação</span>
+        <textarea id="tapeChangeNote" rows="3" maxlength="240" placeholder="Opcional"></textarea>
+      </label>
+      <div class="tape-form-warning" id="tapeChangeWarning">
+        Se existir uma troca posterior a essa data, o sistema vai bloquear para evitar conflito.
+      </div>
+    </div>
     <div class="logout-btns">
       <button class="btn-confirm-tape" onclick="doTapeChange()">CONFIRMAR TROCA</button>
       <button class="btn-cancel" onclick="closeModal('tapeChangeModal')">CANCELAR</button>
@@ -413,7 +444,6 @@ const API = {
         const data = await res.json();
         message = data.message || message;
       } catch { }
-      this.redirectToLogin();
       throw new Error(message);
     }
 
@@ -446,8 +476,11 @@ const API = {
     return this.request(`/api/traps/${trapId}/calendar?year=${year}&month=${month+1}`);
   },
 
-  async replaceTapeCycle(trapId) {
-    return this.request(`/api/traps/${trapId}/tape-cycle/replace`, { method: 'POST' });
+  async replaceTapeCycle(trapId, payload) {
+    return this.request(`/api/traps/${trapId}/tape-cycle/replace`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    });
   },
 
   async logout() {
@@ -683,6 +716,10 @@ function toggleTrapDropdown() {
 document.addEventListener('click', (e) => {
   const wrap = document.getElementById('trapSelectorWrap');
   if (!wrap.contains(e.target)) wrap.classList.remove('open');
+  const notificationWrap = document.querySelector('.notification-wrap');
+  if (notificationWrap && !notificationWrap.contains(e.target)) {
+    document.getElementById('notificationMenu')?.classList.remove('open');
+  }
 });
 
 function renderTrapOptions() {
@@ -717,6 +754,79 @@ function formatDateTime(value) {
   });
 }
 
+function currentTimeValue() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+}
+
+function toLocalIsoFromInputs(dateValue, timeValue) {
+  if (!dateValue || !timeValue) return null;
+  const date = new Date(`${dateValue}T${timeValue}:00`);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function toggleNotifications() {
+  document.getElementById('notificationMenu')?.classList.toggle('open');
+}
+
+function updateNotifications(info) {
+  const list = document.getElementById('notificationList');
+  const count = document.getElementById('notificationCount');
+  if (!list || !count) return;
+
+  const items = [];
+  const cycle = info?.activeTapeCycle;
+  const latest = info?.latestCapture;
+  const infestation = info?.infestation;
+
+  if (cycle?.startedAt) {
+    items.push({
+      title: 'Fita atual iniciada',
+      text: formatDateTime(cycle.startedAt),
+      type: 'cycle',
+    });
+  }
+  if (infestation?.insufficientData) {
+    items.push({
+      title: 'Dados insuficientes',
+      text: `${infestation.daysAvailable || 0}/${infestation.daysRequired || 3} dias para análise completa`,
+      type: 'warning',
+    });
+  }
+  if (infestation?.level === 'high') {
+    items.push({
+      title: 'Infestação alta detectada',
+      text: `Somatório 3 dias: ${infestation.sum || 0} mariposas`,
+      type: 'high',
+    });
+  }
+  if (latest?.time) {
+    items.push({
+      title: 'Captura recente registrada',
+      text: `${latest.date ? formatDateKey(latest.date) : 'Hoje'} às ${latest.time}`,
+      type: 'capture',
+    });
+  }
+  (info?.tapeCycleHistory || []).slice(0, 2).forEach((cycleItem) => {
+    items.push({
+      title: 'Troca de fita registrada',
+      text: formatDateTime(cycleItem.endedAt || cycleItem.startedAt),
+      type: 'cycle',
+    });
+  });
+
+  count.textContent = String(items.length);
+  count.style.display = items.length ? 'inline-flex' : 'none';
+  list.innerHTML = items.length
+    ? items.map((item) => `
+        <div class="notification-item ${item.type}">
+          <strong>${item.title}</strong>
+          <span>${item.text}</span>
+        </div>
+      `).join('')
+    : '<div class="notification-empty">Nenhum evento importante agora.</div>';
+}
+
 function updateTrapInfestation(infestation, activeCycle = null, history = []) {
   const el = document.getElementById('trapInfestation');
   if (!el || !infestation) {
@@ -734,24 +844,13 @@ function updateTrapInfestation(infestation, activeCycle = null, history = []) {
   const sum = Number(infestation.sum) || 0;
   const daysAvailable = Number(infestation.daysAvailable) || 0;
   const daysRequired = Number(infestation.daysRequired) || 3;
-  const days = Array.isArray(infestation.days) ? infestation.days : [];
-  const dayChips = days.length
-    ? `<div class="infestation-days">${days.map((day) => `
-        <span>
-          <strong>${Number(day.count) || 0}</strong>
-          <small>${formatDateKey(day.date).slice(0, 5)}</small>
-        </span>
-      `).join('')}</div>`
-    : '<div class="infestation-days empty"><span><strong>—</strong><small>sem dados</small></span></div>';
   const insufficientText = infestation.insufficientData
     ? `<span class="infestation-note">Dados insuficientes: ${daysAvailable}/${daysRequired} dias</span>`
     : '';
-  const historyItems = (history || []).slice(0, 3).map((cycle) => `
-    <div class="tape-history-row">
-      <span>${formatDateTime(cycle.startedAt)}</span>
-      <strong>${cycle.total} mariposas</strong>
-    </div>
-  `).join('');
+  const lastHistory = (history || [])[0];
+  const historyItem = lastHistory
+    ? `<div class="tape-history compact"><span>Fita anterior: ${formatDateTime(lastHistory.startedAt)}</span><strong>${lastHistory.total} mariposas</strong></div>`
+    : '';
 
   el.innerHTML = `
     <div class="infestation-head">
@@ -763,16 +862,17 @@ function updateTrapInfestation(infestation, activeCycle = null, history = []) {
       </span>
       <span class="infestation-pill ${level}">Classificação: ${label}</span>
     </div>
-    ${dayChips}
+    <span class="infestation-total strong">Últimos 3 dias: ${sum} ${sum === 1 ? 'mariposa' : 'mariposas'}</span>
     <div class="tape-cycle-grid">
       <span><strong>${formatDateTime(activeCycle?.startedAt)}</strong><small>Fita atual iniciada</small></span>
       <span><strong>${activeCycle?.daysInUse || 0}</strong><small>Dias em uso</small></span>
       <span><strong>${activeCycle?.total || 0}</strong><small>Total no ciclo</small></span>
     </div>
-    <span class="infestation-total">Somatório dos últimos 3 dias: ${sum} ${sum === 1 ? 'mariposa' : 'mariposas'}</span>
     ${insufficientText}
-    <button class="btn-tape-change" type="button" onclick="confirmTapeChange()">Trocar fita</button>
-    ${historyItems ? `<div class="tape-history"><div class="tape-history-title">Histórico de fitas</div>${historyItems}</div>` : ''}
+    <div class="tape-actions-row">
+      <button class="btn-tape-change" type="button" onclick="confirmTapeChange()">Trocar fita</button>
+      ${historyItem}
+    </div>
   `;
 }
 
@@ -822,6 +922,7 @@ async function loadTrapInfo(trapId) {
     document.getElementById('sCaptures').textContent      = info.monthCaptures;
     updateTrapInfestation(info.infestation, info.activeTapeCycle, info.tapeCycleHistory);
     updateLatestCaptureShortcut(info.latestCapture);
+    updateNotifications(info);
     const coordEl = document.getElementById('trapCoordsText') || document.getElementById('trapCoords');
     if (coordEl) coordEl.textContent = `${info.lat}, ${info.lng}`;
   } catch(e) {
@@ -934,6 +1035,7 @@ function renderCalendar() {
     if (hasData) classes += ' has-data';
     if (hasData && calendarData[key].maxLevel === 'high') classes += ' severity-high';
     if (hasData && calendarData[key].maxLevel === 'med') classes += ' severity-med';
+    if (hasData && calendarData[key].isTapeChange) classes += ' tape-change-day';
     dEl.className = classes;
     const num = document.createElement('div');
     num.className = 'cal-day-num';
@@ -946,6 +1048,12 @@ function renderCalendar() {
       dot.className = 'cal-dot ' + calendarData[key].maxLevel;
       dots.appendChild(dot);
       dEl.appendChild(dots);
+    }
+    if (hasData && calendarData[key].isTapeChange && !isFuture) {
+      const tapeMark = document.createElement('div');
+      tapeMark.className = 'cal-tape-mark';
+      tapeMark.title = 'Troca de fita registrada';
+      dEl.appendChild(tapeMark);
     }
     if (!isFuture) {
       dEl.onclick = () => {
@@ -993,6 +1101,15 @@ function loadDayCaptures(dateKeyStr) {
   document.getElementById('dayHeaderDate').textContent = DAY_NAMES[d.getDay()] + ', ' + fmtDate(d);
   document.getElementById('dayHeaderSub').textContent = MONTHS_FULL[d.getMonth()] + ' de ' + d.getFullYear();
   capturesTitle.textContent = 'Capturas do Dia';
+  const tapeChanges = calendarData[dateKeyStr]?.tapeChanges || [];
+  if (tapeChanges.length) {
+    const tapeInfo = document.createElement('div');
+    tapeInfo.className = 'day-tape-info';
+    tapeInfo.innerHTML = tapeChanges.map((item) => `
+      <span>Troca de fita registrada em ${formatDateTime(item.at)}${item.note ? ` - ${item.note}` : ''}</span>
+    `).join('');
+    container.appendChild(tapeInfo);
+  }
   
   const prevDayBtn = document.getElementById('btnPrevDay');
   const nextDayBtn = document.getElementById('btnNextDay');
@@ -1041,8 +1158,17 @@ function loadDayCaptures(dateKeyStr) {
           <div class="cap-thumb-num">${cap.count} novos</div>
         </div>
         <div class="cap-body">
-          <div class="cap-time">${cap.time}</div>
-          <div class="cap-title">Captura ${idx + 1}</div>
+          <div class="cap-topline">
+            <div>
+              <div class="cap-time">${cap.time}</div>
+              <div class="cap-title">Captura ${idx + 1}</div>
+            </div>
+            <div class="cap-open-hint">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </div>
+          </div>
           <div class="cap-chips">
             <span class="cap-chip new-count">${novosInsetosLabel(Number(cap.count) || 0)}</span>
             ${rawCountChip(cap)}
@@ -1688,20 +1814,35 @@ function printReport() {
 }
 
 function confirmTapeChange() {
+  const dateInput = document.getElementById('tapeChangeDate');
+  const timeInput = document.getElementById('tapeChangeTime');
+  const noteInput = document.getElementById('tapeChangeNote');
+  if (dateInput) dateInput.value = selectedDay || dateKey(TODAY);
+  if (timeInput) timeInput.value = currentTimeValue();
+  if (noteInput) noteInput.value = '';
   document.getElementById('tapeChangeModal')?.classList.add('open');
 }
 
 async function doTapeChange() {
   try {
-    await API.replaceTapeCycle(activeTrapId);
+    const dateValue = document.getElementById('tapeChangeDate')?.value;
+    const timeValue = document.getElementById('tapeChangeTime')?.value;
+    const note = document.getElementById('tapeChangeNote')?.value?.trim() || null;
+    const effectiveAt = toLocalIsoFromInputs(dateValue, timeValue);
+    if (!effectiveAt) {
+      showToast('Informe data e hora válidas', 'error');
+      return;
+    }
+
+    const result = await API.replaceTapeCycle(activeTrapId, { effectiveAt, note });
     closeModal('tapeChangeModal');
     activeReportData = null;
     await loadTrapInfo(activeTrapId);
     await loadCalendarMonth(calYear, calMonth);
     loadDayCaptures(selectedDay);
-    showToast('Nova fita iniciada com sucesso', 'success');
+    showToast(`${result.movedCaptures || 0} capturas vinculadas à nova fita`, 'success');
   } catch (err) {
-    showToast('Erro ao trocar a fita', 'error');
+    showToast(err.message || 'Erro ao trocar a fita', 'error');
   }
 }
 

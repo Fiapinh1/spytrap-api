@@ -3,6 +3,7 @@ const { createClient } = require('@supabase/supabase-js');
 const {
   calculateNewInsectsForCycle,
   ensureActiveTapeCycle,
+  getTapeCycleForTimestamp,
 } = require('../services/tapeCycles');
 
 const router = express.Router();
@@ -106,9 +107,10 @@ router.post('/storage-event', async (req, res) => {
     }
 
     const capturedAt = normalizeTimestamp(capturada_em);
-    const activeCycle = await ensureActiveTapeCycle(supabase, trapId, capturedAt);
+    const activeCycle = await getTapeCycleForTimestamp(supabase, trapId, capturedAt)
+      || await ensureActiveTapeCycle(supabase, trapId, capturedAt);
     const totalInsetos = total_insetos != null ? Number(total_insetos) : 0;
-    const insetosNovos = await calculateNewInsectsForCycle(supabase, activeCycle.id, totalInsetos);
+    const insetosNovos = await calculateNewInsectsForCycle(supabase, activeCycle.id, totalInsetos, capturedAt);
 
     const newRecord = {
       armadilha_id: trapId,
