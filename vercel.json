@@ -1,21 +1,26 @@
 {
-  "functions": {
-    "server.js": {
-      "includeFiles": [
-        "index.html",
-        "login.html",
-        "styles.css",
-        "capturas.js",
-        "heatmap.js",
-        "Logos/**",
-        "capturas-img/**"
-      ]
-    }
-  },
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/server.js"
+      "src": "server.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "index.html",
+          "login.html",
+          "styles.css",
+          "capturas.js",
+          "heatmap.js",
+          "Logos/**",
+          "capturas-img/**"
+        ]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "server.js"
     }
   ]
 }
